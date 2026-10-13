@@ -9,7 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# Service Account keys (sensitive!)
+# Service Account keys
 credentials/
 *.json
 !package.json
@@ -20,8 +20,14 @@ terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/.terraform.lock.hcl
 
+# Local data
+data/*
+
 # Implementation plan
 plan.md
 
 # AI's memory
 GEMINI.md
+
+# Temp note
+node
