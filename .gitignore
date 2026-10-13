@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Service Account keys (sensitive!)
+credentials/
+*.json
+!package.json
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# Implementation plan
+plan.md
+
+# AI's memory
+GEMINI.md

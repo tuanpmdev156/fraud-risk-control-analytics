@@ -1,0 +1,3 @@
+gcloud alpha projects move fraud-risk-analytics-131026 --organization=63176003774
+
+gcloud projects describe fraud-risk-analytics-131026
