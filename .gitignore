@@ -20,6 +20,9 @@ terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/.terraform.lock.hcl
 
+# Jupyter notebook temp
+.ipynb_checkpoints
+
 # Local data
 data/*
 
