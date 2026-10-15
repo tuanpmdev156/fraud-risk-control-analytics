@@ -122,50 +122,6 @@ fraud-risk-control-analytics/
 
 ---
 
-## 🚀 Current Status
-
-### ✅ Phase 1: Environment Setup & Infrastructure (COMPLETED)
-
-- [x] Python environment with `uv` — dependencies locked (`pyproject.toml` + `uv.lock`)
-- [x] Terraform IaC provisioned on GCP:
-  - [x] GCS Bucket (Data Lake) with lifecycle policy
-  - [x] BigQuery Datasets: `raw`, `staging`, `production`
-  - [x] Service Account `pipeline-sa` with IAM roles (`storage.objectAdmin`, `bigquery.dataEditor`, `bigquery.jobUser`)
-  - [x] Service Account JSON key auto-generated
-
-### ⬜ Phase 2: Data Ingestion — Batch Pipeline
-- [ ] Kaggle API setup & IEEE-CIS dataset download
-- [ ] CSV → Parquet conversion script (`scripts/ingest_to_gcs.py`)
-- [ ] Airflow DAG orchestration (`airflow/dags/risk_batch_ingest.py`)
-
-### ⬜ Phase 3: Data Transformation with dbt
-- [ ] Staging models (`stg_transactions`, `stg_identity`)
-- [ ] Fact & Mart models (`fct_transactions`, `mart_risk_summary`, `mart_ai_insights`)
-- [ ] Data quality tests
-
-### ⬜ Phase 4: Streaming Pipeline with Redpanda
-- [ ] Redpanda broker + Console (Docker)
-- [ ] Event Producer & Consumer
-
-### ⬜ Phase 5: Agentic AI Narration Layer
-- [ ] LLM integration (provider-agnostic)
-- [ ] Anti-hallucination guardrails
-- [ ] Write insights to `mart_ai_insights`
-
-### ⬜ Phase 6: Google Looker Studio Dashboard
-- [ ] Connect BigQuery data sources
-- [ ] Interactive charts, KPI scorecards, AI summary panel
-
-### ⬜ Phase 7: Automation & Testing
-- [ ] Makefile with one-command pipeline execution
-- [ ] End-to-end pipeline validation
-
-### ⬜ Phase 8: Documentation & Final Review
-- [ ] Complete README with reproduction steps
-- [ ] Dashboard screenshots & public link
-
----
-
 ## 🔧 Quick Start
 
 ### Prerequisites
@@ -209,16 +165,3 @@ terraform output
 gcloud storage ls
 bq ls --project_id=YOUR_PROJECT_ID
 ```
-
----
-
-## 📝 License
-
-This project is built for educational purposes as part of the [DataTalksClub Data Engineering Zoomcamp](https://github.com/DataTalksClub/data-engineering-zoomcamp).
-
-## 🙏 Acknowledgments
-
-- [DataTalksClub DE Zoomcamp](https://github.com/DataTalksClub/data-engineering-zoomcamp)
-- [IEEE-CIS Fraud Detection Dataset](https://www.kaggle.com/c/ieee-fraud-detection) (Vesta Corporation)
-- Reference project: [rayluo88/zoomcamp-dataeng-proj](https://github.com/rayluo88/zoomcamp-dataeng-proj)
-

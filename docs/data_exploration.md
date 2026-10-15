@@ -110,9 +110,3 @@ The dataset used is the **IEEE-CIS Fraud Detection** benchmark (provided by Vest
   * Optimizes query performance and drastically reduces execution cost for risk segmentation and card-network breakdowns.
 
 ---
-
-## 4. Next Action Items (Phase 2 Ingestion)
-
-- [ ] Standardize the exploratory notebook [`notebooks/data_exploration.ipynb`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/notebooks/data_exploration.ipynb) with core distribution charts.
-- [ ] Develop `scripts/ingest_to_gcs.py`: Convert raw CSV files to Parquet (Snappy compression) and upload to the GCS bucket.
-- [ ] Author the Airflow DAG `airflow/dags/risk_batch_ingest.py` to automate the batch ingestion pipeline into BigQuery.
