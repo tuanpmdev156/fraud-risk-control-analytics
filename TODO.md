@@ -2,15 +2,15 @@
 
 ## Project Summary
 
-1. Batch Pipeline: Ingest dữ liệu lịch sử đã có sẵn nhãn (train_transaction.csv đã có nhãn mặt đất isFraud) qua GCS → BigQuery.
+1. **Batch Pipeline**: Ingest dữ liệu lịch sử đã có sẵn nhãn (`train_transaction.csv` có nhãn `isFraud`) qua GCS → BigQuery External Tables tự động qua Airflow.
 
-2. Transformation (dbt): Xử lý, làm sạch và thống kê tổng hợp các giao dịch đã xảy ra (tỷ lệ gian lận, tổng tiền tổn thất theo loại thẻ, thiết bị, thời gian).
+2. **Transformation (dbt)**: Xử lý, làm sạch và mô hình hóa Medallion (`stg_*`, `fct_transactions`, `mart_risk_summary`) tối ưu partition & cluster.
 
-3. Streaming (Redpanda): Replay sự kiện giao dịch vào topic và lưu trữ về BigQuery/GCS (chưa có bước chấm điểm rủi ro qua model).
+3. **Streaming Pipeline (Nâng cấp)**: Replay luồng giao dịch qua Redpanda, tính toán **Sliding Window Features** (vận tốc giao dịch, tần suất quẹt thẻ trong 5-10 phút) và kích hoạt **Instant Alerting qua Telegram Bot** khi chạm ngưỡng rủi ro cao.
 
-4. BI Dashboard (Looker Studio): Hiển thị báo cáo giám sát rủi ro (monitoring & descriptive analytics).
+4. **BI Dashboard (Looker Studio)**: Hiển thị báo cáo giám sát rủi ro đa chiều (KPIs, Risk breakdown, Hourly Heatmap, AI Incident Report Card).
 
-5. Agentic AI Layer: Dùng LLM để đọc số liệu aggregate và viết tóm tắt nhận định rủi ro, không phải mô hình ML phân loại nhãn giao dịch.
+5. **Agentic AI Layer (Nâng cấp)**: **Agentic Root-Cause Investigator** sử dụng Tool/Function Calling (`execute_bigquery_sql`) để tự động drill-down, truy vấn BigQuery tìm nguyên nhân gốc rễ bất thường và lập bản **Incident Report** hoàn chỉnh.
 
 ---
 
@@ -26,7 +26,6 @@
 ---
 
 ## Phase 2: Ingestion & Batch Pipeline (Completed)
-
 - [x] Standardize the exploratory notebook [`notebooks/data_exploration.ipynb`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/notebooks/data_exploration.ipynb) with core distribution charts.
 - [x] Develop `scripts/ingest_to_gcs.py`: Convert raw CSV files to Parquet (Snappy compression) and upload to the GCS bucket.
 - [x] Author the Airflow DAG `airflow/dags/risk_batch_ingest.py` to automate the batch ingestion pipeline into BigQuery.
@@ -48,19 +47,25 @@
 
 ---
 
-## Phase 4: Streaming Pipeline (Redpanda)
+## Phase 4: Streaming Pipeline (Nâng cấp: Real-time Window Features & Alerting)
 - [ ] Set up Redpanda broker using Docker Compose
-- [ ] Develop event producer (`scripts/streaming/producer.py`) to replay transaction events into Kafka topic
-- [ ] Develop streaming consumer (`scripts/streaming/consumer.py`) to ingest events into BigQuery / GCS
+- [ ] Develop event producer (`scripts/streaming/producer.py`) to replay transactions into Kafka topic
+- [ ] Develop stream processor / consumer (`scripts/streaming/consumer.py`):
+  - [ ] **Sliding Window Processing**: Duy trì state in-memory tính toán window metrics (ví dụ: số giao dịch trong 5 phút `txn_count_5m`, tổng tiền `velocity_amt_5m` theo `card1`)
+  - [ ] **Rule-based Risk Engine**: Kiểm tra ngưỡng vi phạm tốc độ quẹt thẻ hoặc số tiền đột biến
+  - [ ] **Instant Alerting**: Bắn thông báo cảnh báo tức thì kèm chi tiết giao dịch qua Telegram Bot API / Webhook
+  - [ ] Ingest sự kiện luồng vào BigQuery / GCS để phục vụ giám sát
 
 ---
 
-## Phase 5: Agentic AI Narration Layer
-- [ ] Develop `scripts/generate_narration.py`:
-  - [ ] Query aggregated risk metrics from BigQuery `mart_risk_summary`
-  - [ ] Generate structured risk insights using LLM (OpenAI SDK / Groq / DeepSeek)
-  - [ ] Insert generated narration into BigQuery table `mart_ai_insights`
-- [ ] Integrate narration task into Airflow orchestration DAG
+## Phase 5: Agentic AI Layer (Nâng cấp: Root-Cause Investigator)
+- [ ] Develop `scripts/generate_narration.py` (hoặc `scripts/ai_investigator.py`):
+  - [ ] **Anomaly Trigger**: Tự động phát hiện bất thường từ `mart_risk_summary` (tỷ lệ gian lận tăng đột biến > ngưỡng cho phép)
+  - [ ] **Function Calling Engine**: Cung cấp tool `execute_bigquery_sql` cho LLM (OpenAI / DeepSeek / Groq)
+  - [ ] **ReAct Investigation Loop**: LLM tự động đặt giả thuyết và sinh câu lệnh SQL drill-down vào `fct_transactions` và `stg_identity` (bóc tách theo `card4`, `DeviceType`, `P_emaildomain`, `addr1`)
+  - [ ] **Incident Report Generation**: Xuất bản báo cáo chuẩn gồm: Executive Summary, Root-Cause Analysis, Actionable Mitigations và SQL Audit Trail
+  - [ ] Ghi báo cáo điều tra vào BigQuery table `mart_ai_insights`
+- [ ] Tích hợp task điều tra AI vào Airflow DAG sau khi hoàn thành dbt run
 
 ---
 
@@ -70,7 +75,7 @@
   - [ ] Executive KPI scorecards (Total Transaction Volume, Fraud Rate, Fraud Loss Amount)
   - [ ] Risk breakdown charts (by Card Network, Product Code, Device Type, Geo Region)
   - [ ] Hourly Fraud Heatmap (`transaction_hour` vs `day_of_week`)
-  - [ ] AI Executive Summary Card (displaying latest LLM-generated narrative insights)
+  - [ ] AI Executive Summary Card (displaying latest LLM-generated narrative insights & Incident Reports)
 
 ---
 
