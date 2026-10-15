@@ -20,17 +20,18 @@ terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/.terraform.lock.hcl
 
-# Jupyter notebook temp
+# Jupyter
 .ipynb_checkpoints
 
-# Local data
-data/*
+# Airflow
+airflow/logs/*
+!airflow/logs/.gitkeep
+airflow/.env
+airflow/*.db
+airflow/*.pid
+airflow/airflow.cfg
 
-# Implementation plan
-plan.md
-
-# AI's memory
+# Local files
 GEMINI.md
-
-# Temp note
-node
+note
+data/*

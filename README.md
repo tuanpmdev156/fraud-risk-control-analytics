@@ -101,7 +101,8 @@ fraud-risk-control-analytics/
 │   └── versions.tf               # Provider versions
 ├── docs/                         # Documentation & Analysis Reports
 │   ├── data_exploration.md       # Comprehensive EDA findings, charts & DW architecture decisions
-│   └── ingestion.md              # Batch ingestion benchmarks, chunking & CLI reference
+│   ├── ingestion.md              # Batch ingestion benchmarks, chunking & CLI reference
+│   └── airflow_batch_ingest_plan.md # Airflow batch ingestion pipeline specification & execution plan
 ├── notebooks/                    # Data Profiling & Exploration Notebooks
 │   ├── data_exploration.ipynb   # Standardized numerical profiling & schema validation
 │   ├── eda_transaction.ipynb     # Transaction distribution exploration
@@ -110,11 +111,13 @@ fraud-risk-control-analytics/
 ├── scripts/                      # Data Ingestion & Utility Scripts
 │   ├── ingest_to_gcs.py          # Convert raw CSV to Snappy Parquet & upload to GCS Data Lake
 │   └── generate_narration.py     # LLM risk narration generator (TODO)
-├── airflow/                      # Batch Workflow Orchestration (TODO)
-│   ├── Dockerfile
-│   ├── docker-compose.yaml
+├── airflow/                      # Batch Workflow Orchestration
+│   ├── Dockerfile                # Custom Airflow image with GCP & PyArrow dependencies
+│   ├── docker-compose.yaml       # Airflow Webserver, Scheduler & Postgres 16
+│   ├── .env.example              # Airflow environment configuration template
+│   ├── requirements.txt          # Python dependencies for Airflow
 │   └── dags/
-│       └── risk_batch_ingest.py
+│       └── risk_batch_ingest.py  # Automated DAG: CSV -> Parquet -> GCS -> BigQuery External Tables
 ├── redpanda/                     # Streaming Pipeline (TODO)
 │   ├── docker-compose.yaml
 │   ├── producer.py
@@ -208,3 +211,31 @@ gcloud storage ls gs://YOUR_BUCKET_NAME/raw/ieee_cis/
 ```
 
 📖 **Full Ingestion Guide, Benchmarks & CLI Options**: [`docs/ingestion.md`](docs/ingestion.md)
+
+---
+
+### 7. Orchestrate Batch Ingestion with Apache Airflow
+
+The batch ingestion pipeline is fully automated and orchestrated via Apache Airflow, coordinating raw data validation, Parquet conversion, GCS Data Lake ingestion, BigQuery External Table provisioning, and automated Data Quality checks.
+
+#### Pipeline Overview
+1. **`check_raw_data`**: Verifies that local raw CSV files exist and are not empty before downstream execution.
+2. **`convert_transaction_to_parquet` & `convert_identity_to_parquet`**: Parallel conversion from CSV to Snappy-compressed Parquet (**~88% storage saving**).
+3. **`upload_transaction_to_gcs` & `upload_identity_to_gcs`**: Ingests Parquet files into the GCS Data Lake (`gs://<bucket>/raw/ieee_cis/`).
+4. **`create_bq_ext_transaction` & `create_bq_ext_identity`**: Automatically provisions BigQuery External Tables in the `raw` dataset pointing directly to Parquet on GCS.
+5. **`audit_transaction_data_quality` & `audit_identity_data_quality`**: Automated Data Quality gates validating row counts (**590,540** transactions, **144,233** identities) and verifying primary key integrity (`TransactionID IS NOT NULL`).
+
+#### Quick Commands
+```bash
+# Start Airflow cluster (Postgres, Webserver, Scheduler)
+docker compose -f airflow/docker-compose.yaml up -d --build
+
+# View Airflow Web UI
+# URL: http://localhost:8080 (Username: admin | Password: admin)
+
+# Unpause and trigger the DAG via CLI or Web UI
+docker compose -f airflow/docker-compose.yaml exec airflow-scheduler airflow dags unpause risk_batch_ingest
+docker compose -f airflow/docker-compose.yaml exec airflow-scheduler airflow dags trigger risk_batch_ingest
+```
+
+📖 **Full Pipeline Specification & Step-by-Step Plan**: [`docs/airflow_batch_ingest_plan.md`](docs/airflow_batch_ingest_plan.md)
