@@ -22,12 +22,16 @@ This project builds an **end-to-end Data Engineering system** for financial frau
 - **Interactive BI Dashboard** — Google Looker Studio with dynamic filters and cross-filtering
 - **Agentic AI Narration** — LLM-powered risk summary generation with strict anti-hallucination guardrails, stored directly in BigQuery
 
-## 2. Dataset
+## 2. Dataset & Exploratory Data Analysis (EDA)
 
-**IEEE-CIS Fraud Detection** (Vesta Corporation) — [Kaggle](https://www.kaggle.com/c/ieee-fraud-detection)
-- ~590,540 transactions + ~144,233 identity records
-- ~3.5% fraud rate (20,663 labeled fraudulent transactions)
-- 400+ features (transaction amount, card type, email domain, device/browser info, etc.)
+The project utilizes the benchmark **IEEE-CIS Fraud Detection** dataset ([Kaggle](https://www.kaggle.com/c/ieee-fraud-detection)):
+- **Data Volume**: 590,540 transactions (~3.50% fraud rate) and 144,233 identity records.
+- **Conversion Efficiency**: Compressed raw CSVs (710 MB) into Snappy Parquet (83.6 MB, **~88% space saving**).
+- **Key EDA Findings**: Severe class imbalance, heavy amount right-skewness, and ~3.8x higher fraud rate in digital transactions with identity (particularly mobile devices at 10.17%).
+- **DW Architecture**: Pruned 400+ raw columns down to **~20–22 core attributes** (~95.8% memory reduction), partitioned by `transaction_date` and clustered by `product_cd`, `card4`, `is_fraud`.
+
+📖 **Detailed EDA & Architectural Decisions**: [`docs/data_exploration.md`](docs/data_exploration.md)  
+🔬 **Standardized Profiling Notebook**: [`notebooks/data_exploration.ipynb`](notebooks/data_exploration.ipynb)
 
 ---
 
@@ -90,11 +94,22 @@ This project builds an **end-to-end Data Engineering system** for financial frau
 
 ```
 fraud-risk-control-analytics/
-├── terraform/                    # Infrastructure as Code
+├── terraform/                    # Infrastructure as Code (GCS, BigQuery, IAM)
 │   ├── main.tf                   # GCS bucket, BigQuery datasets, Service Account, IAM
 │   ├── variables.tf              # Input variables: project_id, region, bucket_name
 │   ├── outputs.tf                # Outputs: bucket_url, service_account_email
 │   └── versions.tf               # Provider versions
+├── docs/                         # Documentation & Analysis Reports
+│   ├── data_exploration.md       # Comprehensive EDA findings, charts & DW architecture decisions
+│   └── ingestion.md              # Batch ingestion benchmarks, chunking & CLI reference
+├── notebooks/                    # Data Profiling & Exploration Notebooks
+│   ├── data_exploration.ipynb   # Standardized numerical profiling & schema validation
+│   ├── eda_transaction.ipynb     # Transaction distribution exploration
+│   ├── eda_identity.ipynb        # Identity & device attribute exploration
+│   └── transaction_w_identity.ipynb
+├── scripts/                      # Data Ingestion & Utility Scripts
+│   ├── ingest_to_gcs.py          # Convert raw CSV to Snappy Parquet & upload to GCS Data Lake
+│   └── generate_narration.py     # LLM risk narration generator (TODO)
 ├── airflow/                      # Batch Workflow Orchestration (TODO)
 │   ├── Dockerfile
 │   ├── docker-compose.yaml
@@ -108,9 +123,6 @@ fraud-risk-control-analytics/
 │   ├── dbt_project.yml
 │   ├── models/staging/
 │   └── models/marts/
-├── scripts/                      # Standalone Scripts (TODO)
-│   ├── ingest_to_gcs.py
-│   └── generate_narration.py
 ├── looker/                       # Looker Studio Assets (TODO)
 │   ├── report_spec.md
 │   └── queries/
@@ -156,12 +168,43 @@ cp terraform.tfvars.example terraform.tfvars
 terraform init
 terraform plan
 terraform apply
+cd ..
 ```
 
 ### 4. Verify Infrastructure
 
 ```bash
-terraform output
+terraform -chdir=terraform output
 gcloud storage ls
 bq ls --project_id=YOUR_PROJECT_ID
 ```
+
+### 5. Data Exploration & Validation
+
+Inspect distributions, label imbalance, and schema integrity:
+- **Notebook**: [`notebooks/data_exploration.ipynb`](notebooks/data_exploration.ipynb) (numerical profiling & memory benchmarks)
+- **Report**: [`docs/data_exploration.md`](docs/data_exploration.md) (full visual charts & DW architecture rationale)
+
+```bash
+uv run jupyter lab notebooks/data_exploration.ipynb
+```
+
+### 6. Ingest Data to GCS Data Lake
+
+Run [`scripts/ingest_to_gcs.py`](scripts/ingest_to_gcs.py) to convert raw CSVs to Snappy Parquet (**~88% compression**) and upload to GCS:
+
+```bash
+# Standard execution (Convert CSV -> Parquet and upload to GCS)
+python scripts/ingest_to_gcs.py
+
+# Optional: upload only / convert only
+python scripts/ingest_to_gcs.py --skip-convert  # upload only
+python scripts/ingest_to_gcs.py --skip-upload   # convert only
+```
+
+Verify uploaded objects in GCS:
+```bash
+gcloud storage ls gs://YOUR_BUCKET_NAME/raw/ieee_cis/
+```
+
+📖 **Full Ingestion Guide, Benchmarks & CLI Options**: [`docs/ingestion.md`](docs/ingestion.md)
