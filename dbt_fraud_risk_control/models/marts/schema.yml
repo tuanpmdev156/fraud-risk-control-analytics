@@ -1,0 +1,42 @@
+version: 2
+
+models:
+  - name: fct_transaction
+    description: "Fact table containing all transactions enriched with digital identity and device attributes."
+    columns:
+      - name: transaction_id
+        description: "Unique transaction identifier (Primary Key)."
+        tests:
+          - unique
+          - not_null
+      - name: is_fraud
+        description: "Binary fraud label (0: legit, 1: fraud)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+              quote: false
+      - name: transaction_amount
+        description: "Transaction payment amount in USD."
+        tests:
+          - not_null
+      - name: transaction_date
+        description: "Date of transaction used for BigQuery table partitioning."
+        tests:
+          - not_null
+
+  - name: fraud_risk_summary
+    description: "Summary of fraud metrics by date, card network, product code, and device type."
+    columns:
+      - name: transaction_date
+        description: "Transaction date partition grain."
+        tests:
+          - not_null
+      - name: total_transaction
+        description: "Total count of transactions."
+        tests:
+          - not_null
+      - name: fraud_rate
+        description: "Calculated fraud rate percentage (0 - 100%)."
+        tests:
+          - not_null

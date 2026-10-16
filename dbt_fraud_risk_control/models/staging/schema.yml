@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_transaction
+    description: "Staging view for transactions with core columns and standardized naming conventions."
+    columns:
+      - name: transaction_id
+        description: "Unique transaction identifier (Primary Key)."
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_identity
+    description: "Staging view for digital identity and device info with standardized naming conventions."
+    columns:
+      - name: transaction_id
+        description: "Foreign transaction identifier."
+        tests:
+          - unique
+          - not_null
