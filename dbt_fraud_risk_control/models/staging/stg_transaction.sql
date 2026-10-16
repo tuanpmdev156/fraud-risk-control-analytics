@@ -14,9 +14,9 @@ transformed_trans AS
          -- Transaction Details
         CAST(TransactionAmt AS FLOAT64) AS transaction_amount,
         {{ classify_amount('CAST(TransactionAmt AS FLOAT64)') }} AS amount_level,
-        CAST(ProductCD AS STRING) AS product_cd,
+        CAST(ProductCD AS STRING) AS product_code,
 
-        -- Card Info
+        -- Card Details
         CAST(card1 AS INT64) AS bank_code,
         CAST(card2 AS FLOAT64) AS branch,
         LOWER(CAST(card4 AS STRING)) AS card_network,
@@ -48,7 +48,7 @@ SELECT
     is_fraud,
     transaction_amount,
     amount_level,
-    product_cd,
+    product_code,
     bank_code,
     branch,
     card_network,
