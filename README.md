@@ -51,7 +51,7 @@ The project utilizes the benchmark **IEEE-CIS Fraud Detection** dataset ([Kaggle
 │                                                       │                 │
 │                                                       ▼                 │
 │                                              dbt Production (fct_*,     │
-│                                               mart_risk_summary)        │
+│                                               mart_fraud_summary)        │
 │                                                       │                 │
 │                                                       ▼                 │
 │                                              LLM Narration Layer        │

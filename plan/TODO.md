@@ -4,7 +4,7 @@
 
 1. **Batch Pipeline**: Ingest dữ liệu lịch sử đã có sẵn nhãn (`train_transaction.csv` có nhãn `isFraud`) qua GCS → BigQuery External Tables tự động qua Airflow.
 
-2. **Transformation (dbt)**: Xử lý, làm sạch và mô hình hóa Medallion (`stg_*`, `fct_transactions`, `mart_risk_summary`) tối ưu partition & cluster.
+2. **Transformation (dbt)**: Xử lý, làm sạch và mô hình hóa Medallion (`stg_*`, `fct_transactions`, `mart_fraud_summary`) tối ưu partition & cluster.
 
 3. **Streaming Pipeline (Nâng cấp)**: Replay luồng giao dịch qua Redpanda, tính toán **Sliding Window Features** (vận tốc giao dịch, tần suất quẹt thẻ trong 5-10 phút) và kích hoạt **Instant Alerting qua Telegram Bot** khi chạm ngưỡng rủi ro cao.
 
@@ -34,16 +34,16 @@
 
 ---
 
-## Phase 3: Data Warehouse & Transformations (dbt)
-- [ ] Initialize dbt project (`dbt_fraud_analytics`) with `dbt-bigquery`
-- [ ] Implement staging models:
-  - [ ] `stg_transaction.sql` (prune to ~20–22 core columns, rename, cast types)
-  - [ ] `stg_identity.sql` (standardize column names: replace hyphens with underscores)
-- [ ] Implement production marts:
-  - [ ] `fct_transactions.sql` (partition by `transaction_date`, cluster by `product_cd`, `card4`, `is_fraud`)
-  - [ ] `mart_risk_summary.sql` (aggregated risk metrics by date, card network, device)
-- [ ] Add dbt tests (schema validation, `unique`, `not_null`, `accepted_values`)
-- [ ] Generate dbt documentation and lineage graph
+## Phase 3: Data Warehouse & Transformations (dbt) (Completed)
+- [x] Initialize dbt project (`dbt_fraud_risk_control`) with `dbt-bigquery`
+- [x] Implement staging models:
+  - [x] `stg_transaction.sql` (prune to ~20–22 core columns, rename, cast types)
+  - [x] `stg_identity.sql` (standardize column names: replace hyphens with underscores)
+- [x] Implement production marts:
+  - [x] `fct_transaction.sql` (partition by `transaction_date`, cluster by `product_code`, `card_network`, `is_fraud`)
+  - [x] `mart_risk_summary.sql` (aggregated risk metrics by date, card network, device)
+- [x] Add dbt tests (schema validation, `unique`, `not_null`, `accepted_values`, singular tests)
+- [x] Generate dbt documentation and lineage graph
 
 ---
 
@@ -60,7 +60,7 @@
 
 ## Phase 5: Agentic AI Layer (Nâng cấp: Root-Cause Investigator)
 - [ ] Develop `scripts/generate_narration.py` (hoặc `scripts/ai_investigator.py`):
-  - [ ] **Anomaly Trigger**: Tự động phát hiện bất thường từ `mart_risk_summary` (tỷ lệ gian lận tăng đột biến > ngưỡng cho phép)
+  - [ ] **Anomaly Trigger**: Tự động phát hiện bất thường từ `mart_fraud_summary` (tỷ lệ gian lận tăng đột biến > ngưỡng cho phép)
   - [ ] **Function Calling Engine**: Cung cấp tool `execute_bigquery_sql` cho LLM (OpenAI / DeepSeek / Groq)
   - [ ] **ReAct Investigation Loop**: LLM tự động đặt giả thuyết và sinh câu lệnh SQL drill-down vào `fct_transactions` và `stg_identity` (bóc tách theo `card4`, `DeviceType`, `P_emaildomain`, `addr1`)
   - [ ] **Incident Report Generation**: Xuất bản báo cáo chuẩn gồm: Executive Summary, Root-Cause Analysis, Actionable Mitigations và SQL Audit Trail
@@ -70,7 +70,7 @@
 ---
 
 ## Phase 6: BI Dashboard (Google Looker Studio)
-- [ ] Connect Looker Studio to BigQuery production marts (`fct_transactions`, `mart_risk_summary`, `mart_ai_insights`)
+- [ ] Connect Looker Studio to BigQuery production marts (`fct_transactions`, `mart_fraud_summary`, `mart_ai_insights`)
 - [ ] Build interactive dashboard pages:
   - [ ] Executive KPI scorecards (Total Transaction Volume, Fraud Rate, Fraud Loss Amount)
   - [ ] Risk breakdown charts (by Card Network, Product Code, Device Type, Geo Region)

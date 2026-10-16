@@ -20,7 +20,7 @@ flowchart TD
 
     subgraph BigQuery_Production ["3. Production Marts (dbt Tables)"]
         fct_trans["fct_transactions\n(Partition: transaction_date\nCluster: product_cd, card4, is_fraud)"]
-        mart_summary["mart_risk_summary\n(Aggregated daily risk metrics,\nfraud rate, loss amount)"]
+        mart_summary["mart_fraud_summary\n(Aggregated daily risk metrics,\nfraud rate, loss amount)"]
     end
 
     subgraph Downstream_Consumers ["4. Downstream Consumers"]
@@ -61,7 +61,7 @@ dbt/
 │   └── marts/
 │       ├── schema.yml            # Schema validation, tests (accepted_values, not_null, unique)
 │       ├── fct_transactions.sql  # Denormalized Fact (Partitioned & Clustered)
-│       └── mart_risk_summary.sql # Aggregated risk metrics theo date, card, product, device
+│       └── mart_fraud_summary.sql # Aggregated risk metrics theo date, card, product, device
 └── tests/
     ├── assert_valid_fraud_rate.sql      # Singular test: Tỷ lệ gian lận trong khoảng [0, 100%]
     └── assert_positive_amounts.sql      # Singular test: Số tiền giao dịch phải >= 0
@@ -93,7 +93,7 @@ dbt/
   * **Partitioning**: Theo `transaction_date` (giúp Looker Studio lọc theo khoảng ngày mà chỉ tốn scan chi phí cho đúng các partition được chọn, giảm 80–90% byte scan).
   * **Clustering**: Theo `product_cd`, `card_network` (`card4`), `is_fraud` (tăng tốc độ truy vấn khi dashboard lọc theo loại sản phẩm và phân loại rủi ro).
 
-#### 2. Mart: `mart_risk_summary`
+#### 2. Mart: `mart_fraud_summary`
 * **Mô tả**: Bảng tổng hợp số liệu rủi ro định kỳ theo các chiều phân tích quan trọng.
 * **Granularity**: `transaction_date`, `card_network`, `product_cd`, `device_type`.
 * **Metrics (Chỉ số)**:
@@ -135,7 +135,7 @@ dbt/
 * Viết SQL cho `models/marts/fct_transactions.sql`:
   * Materialized dạng `table`.
   * Cấu hình BigQuery partition & cluster.
-* Viết SQL cho `models/marts/mart_risk_summary.sql`:
+* Viết SQL cho `models/marts/mart_fraud_summary.sql`:
   * Tính toán đầy đủ các metrics tổng hợp rủi ro.
 * Khai báo metadata, mô tả và relationship tests trong `models/marts/schema.yml`.
 * Thực thi `uv run dbt run --select marts` và xác thực bảng trên BigQuery Console.
@@ -155,17 +155,18 @@ dbt/
 * Tạo dbt catalog: `uv run dbt docs generate`.
 * Kiểm tra Data Lineage Graph để bảo đảm không có circular dependency.
 
-### Bước 7: Tích hợp và Tự động hóa với Airflow (Optional Preparation)
-* Thiết lập BashOperator / Cosmos / VirtualenvOperator sẵn sàng để Airflow kích hoạt `dbt run` và `dbt test` tự động sau khi bước Ingestion hoàn thành.
+### Bước 7: Tích hợp và Tự động hóa với Airflow (Optional Preparation - Lựa chọn B)
+* **Quyết định**: Tạm thời duy trì dbt độc lập để ưu tiên chuyển sang **Phase 4: Streaming Pipeline**.
+* **Kế hoạch thực hiện**: Sẽ tích hợp `dbt run` và `dbt test` vào Airflow DAG tổng thể (Master Pipeline) ở **Phase 5** (khi kết nối cùng task Agentic AI Narration) hoặc **Phase 7** (Final Polish).
 
 ---
 
 ## 5. Tiêu Chuẩn Nghiệm Thu (Acceptance Criteria & DoD)
 
-- [ ] Lệnh `dbt debug` trả về `All checks passed!`.
-- [ ] Số dòng trong `fct_transactions` khớp chính xác với bảng thô: **590,540 dòng**.
-- [ ] Bảng `fct_transactions` được partition theo `transaction_date` và clustered theo `product_cd`, `card_network`, `is_fraud`.
-- [ ] Bảng `mart_risk_summary` tổng hợp chính xác tỷ lệ gian lận toàn hệ thống (~**3.50%**).
-- [ ] 100% các bài test `dbt test` chạy thành công (0 test failures).
-- [ ] Chi phí scan query cho các báo cáo Looker Studio giảm tối thiểu **80%** so với query trực tiếp bảng raw.
-- [ ] Bộ tài liệu `dbt docs` sinh ra đầy đủ schema và lineage graph trực quan.
+- [x] Lệnh `dbt debug` trả về `All checks passed!`.
+- [x] Số dòng trong `fct_transaction` khớp chính xác với bảng thô: **590,540 dòng**.
+- [x] Bảng `fct_transaction` được partition theo `transaction_date` và clustered theo `product_code`, `card_network`, `is_fraud`.
+- [x] Bảng `mart_risk_summary` tổng hợp chính xác tỷ lệ gian lận toàn hệ thống (~**3.50%**).
+- [x] 100% các bài test `dbt test` chạy thành công (0 test failures).
+- [x] Chi phí scan query cho các báo cáo Looker Studio giảm tối thiểu **80%** so với query trực tiếp bảng raw.
+- [x] Bộ tài liệu `dbt docs` sinh ra đầy đủ schema và lineage graph trực quan.
