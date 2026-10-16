@@ -31,6 +31,17 @@ airflow/*.db
 airflow/*.pid
 airflow/airflow.cfg
 
+# dbt artifacts & builds
+target/
+dbt_packages/
+dbt_modules/
+logs/
+*.log
+
+# dbt sensitive & local configs
+profiles.yml
+.user.yml
+
 # Local files
 GEMINI.md
 note

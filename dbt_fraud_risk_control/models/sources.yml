@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: raw
+    database: fraud-risk-analytics-131026
+    schema: raw
+    description: "Raw data from IEEE-CIS Fraud Detection dataset stored as external tables in BigQuery."
+    tables:
+      - name: ext_transaction
+        description: "Transaction table inclues 394 columns."
+      - name: ext_identity
+        description: "Identity and device info table includes 41 columns."
