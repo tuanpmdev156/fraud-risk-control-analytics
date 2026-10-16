@@ -41,7 +41,7 @@
   - [x] `stg_identity.sql` (standardize column names: replace hyphens with underscores)
 - [x] Implement production marts:
   - [x] `fct_transaction.sql` (partition by `transaction_date`, cluster by `product_code`, `card_network`, `is_fraud`)
-  - [x] `mart_risk_summary.sql` (aggregated risk metrics by date, card network, device)
+  - [x] `fraud_risk_summary.sql` (aggregated risk metrics by date, card network, device)
 - [x] Add dbt tests (schema validation, `unique`, `not_null`, `accepted_values`, singular tests)
 - [x] Generate dbt documentation and lineage graph
 

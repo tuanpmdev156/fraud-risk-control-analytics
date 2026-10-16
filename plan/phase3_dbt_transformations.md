@@ -166,7 +166,7 @@ dbt/
 - [x] Lệnh `dbt debug` trả về `All checks passed!`.
 - [x] Số dòng trong `fct_transaction` khớp chính xác với bảng thô: **590,540 dòng**.
 - [x] Bảng `fct_transaction` được partition theo `transaction_date` và clustered theo `product_code`, `card_network`, `is_fraud`.
-- [x] Bảng `mart_risk_summary` tổng hợp chính xác tỷ lệ gian lận toàn hệ thống (~**3.50%**).
+- [x] Bảng `fraud_risk_summary` tổng hợp chính xác tỷ lệ gian lận toàn hệ thống (~**3.50%**).
 - [x] 100% các bài test `dbt test` chạy thành công (0 test failures).
 - [x] Chi phí scan query cho các báo cáo Looker Studio giảm tối thiểu **80%** so với query trực tiếp bảng raw.
 - [x] Bộ tài liệu `dbt docs` sinh ra đầy đủ schema và lineage graph trực quan.
