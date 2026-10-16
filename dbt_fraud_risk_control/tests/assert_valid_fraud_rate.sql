@@ -3,5 +3,5 @@ SELECT
     transaction_date,
     card_network,
     fraud_rate
-FROM {{ ref('mart_risk_summary') }}
+FROM {{ ref('fraud_risk_summary') }}
 WHERE fraud_rate < 0 OR fraud_rate > 100
