@@ -11,7 +11,8 @@ Automates the batch ingestion pipeline for the IEEE-CIS Fraud Detection dataset:
 from __future__ import annotations
 
 import os
-import sys
+import requests
+import urllib.parse
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -45,16 +46,18 @@ IDENTITY_FILE = "train_identity"
 EXPECTED_TRANSACTIONS = 590540
 EXPECTED_IDENTITIES = 144233
 
-SIMULATE_FAILURE = False
-
+# Simulate error task
+# 'None' to run normal
+#SIMULATE_FAIL_TASK = "None" 
+SIMULATE_FAIL_TASK = "upload_transaction_to_gcs"
 
 # ---------------------------------------------------------------------------
 # Python Task Callables
 # ---------------------------------------------------------------------------
 def check_raw_files(**context) -> None:
     """Verify that raw CSV files exist and are not empty before proceeding."""
-    if SIMULATE_FAILURE:
-        raise RuntimeError("SIMULATED ERROR")
+    if SIMULATE_FAIL_TASK == "check_raw_data":
+        raise RuntimeError("SIMULATED ERROR at check_raw_data")
     files = [
         RAW_DIR / f"{TRANSACTION_FILE}.csv",
         RAW_DIR / f"{IDENTITY_FILE}.csv",
@@ -70,14 +73,17 @@ def check_raw_files(**context) -> None:
             raise ValueError(f"Source file is empty: {file_path}")
         print(f"Verified source file: {file_path.name} ({file_size_mb:.2f} MB)")
 
-
 def convert_csv_to_parquet(file_base_name: str, **context) -> str:
     """Convert a CSV file to Snappy-compressed Parquet using PyArrow."""
     import pyarrow.csv as pv
     import pyarrow.parquet as pq
-
+    
     csv_path = RAW_DIR / f"{file_base_name}.csv"
     pq_path = PARQUET_DIR / f"{file_base_name}.parquet"
+    current_task_id = context.get("task_instance").task_id
+    
+    if SIMULATE_FAIL_TASK == current_task_id:
+        raise RuntimeError(f"SIMULATED ERROR at {current_task_id}")
 
     if not csv_path.exists():
         raise FileNotFoundError(f"Source CSV not found: {csv_path}")
@@ -96,6 +102,75 @@ def convert_csv_to_parquet(file_base_name: str, **context) -> str:
     print(f"Conversion complete: {pq_path.name} ({csv_mb:.1f}MB -> {pq_mb:.1f}MB, saved {saved:.1f}%)")
     return str(pq_path)
 
+def slack_alert_on_failure(context) -> None:
+    """
+    Trigger when reaching retry limit with FAILED status
+    """
+    webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
+    if not webhook_url:
+        print("SLACK_WEBHOOK_URL is not configured properly.")
+        return
+
+    ti = context.get("task_instance")
+    dag_id = ti.dag_id
+    task_id = ti.task_id
+    logical_date = context.get("logical_date").strftime("%Y-%m-%d %H:%M:%S UTC")
+    
+    encoded_run_id = urllib.parse.quote(ti.run_id, safe="")
+    log_url = f"http://localhost:8080/dags/{dag_id}/grid?tab=logs&dag_run_id={encoded_run_id}&task_id={task_id}"
+    exception = context.get("exception", "No exception message provided")
+
+    # Exception's message 
+    error_summary = str(exception)[:350]
+
+    slack_msg = {
+        "text": f":rotating_light: Pipeline Alert: Task {task_id} FAILED trong DAG {dag_id}",
+        "blocks": [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "🚨 Airflow Ingestion Task Failure",
+                    "emoji": True
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {"type": "mrkdwn", "text": f"*DAG:*\n`{dag_id}`"},
+                    {"type": "mrkdwn", "text": f"*Task:*\n`{task_id}`"},
+                    {"type": "mrkdwn", "text": f"*Execution Date:*\n{logical_date}"},
+                    {"type": "mrkdwn", "text": f"*Severity:*\n*P1 - High (Retries Exhausted)*"}
+                ]
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Root Cause / Error Message:*\n```{error_summary}```"
+                }
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "🔍 Inspect Task Log"},
+                        "url": log_url,
+                        "style": "danger"
+                    }
+                ]
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(webhook_url, json=slack_msg, timeout=10)
+        response.raise_for_status()
+        print(f"[INFO] Slack alert is sent for task={task_id}")
+    except Exception as exc:
+        print(f"[ERROR] Cannot send arlet to Slack: {exc}")
+
 
 # ---------------------------------------------------------------------------
 # DAG Definition
@@ -107,6 +182,7 @@ default_args = {
     "email_on_retry": False,
     "retries": 2,
     "retry_delay": timedelta(minutes=3),
+    "on_failure_callback": slack_alert_on_failure
 }
 
 with DAG(
@@ -116,8 +192,7 @@ with DAG(
     schedule_interval=None,  # Triggered manually or as batch ad-hoc
     start_date=datetime(2026, 1, 1),
     catchup=False,
-    max_active_runs=1,
-    tags=["batch", "gcs", "bigquery", "raw-layer", "fraud-risk"],
+    max_active_runs=1
 ) as dag:
 
     # 1. Check raw CSV files
@@ -142,7 +217,11 @@ with DAG(
     # 3. Upload Parquet files to GCS
     task_upload_transaction_gcs = LocalFilesystemToGCSOperator(
         task_id="upload_transaction_to_gcs",
-        src=str(PARQUET_DIR / f"{TRANSACTION_FILE}.parquet"),
+        src=(
+            "/non_existent_file.parquet"
+            if SIMULATE_FAIL_TASK == "upload_transaction_to_gcs"
+            else str(PARQUET_DIR / f"{TRANSACTION_FILE}.parquet")
+        ),
         dst=f"{GCS_PREFIX}/{TRANSACTION_FILE}.parquet",
         bucket=GCS_BUCKET,
     )

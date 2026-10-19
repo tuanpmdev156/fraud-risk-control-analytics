@@ -225,6 +225,28 @@ The batch ingestion pipeline is fully automated and orchestrated via Apache Airf
 4. **`create_bq_ext_transaction` & `create_bq_ext_identity`**: Automatically provisions BigQuery External Tables in the `raw` dataset pointing directly to Parquet on GCS.
 5. **`audit_transaction_data_quality` & `audit_identity_data_quality`**: Automated Data Quality gates validating row counts (**590,540** transactions, **144,233** identities) and verifying primary key integrity (`TransactionID IS NOT NULL`).
 
+![Airflow Batch Pipeline Success](docs/images/airflow_dag_success.png)  
+*Figure: Airflow batch ingestion pipeline executing all tasks successfully.*
+
+#### Data Quality & External Table Verification
+BigQuery external tables are validated immediately upon ingestion to guarantee data integrity:
+
+![BigQuery Raw Layer Verification](docs/images/bq_raw_verification.png)  
+*Figure: BigQuery SQL audit verifying exact row counts (590,540 transactions, 144,233 identities).*
+
+#### Pipeline Reliability & Slack Alerts
+
+The batch pipeline is built to handle errors and prevent duplicate data:
+
+- **Auto-Retry**: Tasks automatically retry 2 times (spaced 3 minutes apart) to recover from temporary network or API errors.
+- **Safe Reruns (Idempotent)**: Overwriting files in GCS and using `CREATE OR REPLACE` in BigQuery ensures running the pipeline again never creates duplicate records.
+
+![Airflow Task Retry Simulation](docs/images/airflow_task_retry.png)  
+*Figure: Simulated task failure demonstrating auto-retry mechanism before marking as failed.*
+
+![Slack Incident Alert](docs/images/slack_failure_alert.png)  
+*Figure: Real-time Slack incident notification with direct link to task logs.*
+
 #### Quick Commands
 ```bash
 # Start Airflow cluster (Postgres, Webserver, Scheduler)

@@ -59,6 +59,7 @@ services:
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-fraud-risk-analytics-131026}
       GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-fraud-risk-131026-data-lake}
       PYTHONPATH: /opt/airflow
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -98,6 +99,7 @@ services:
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-fraud-risk-analytics-131026}
       GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-fraud-risk-131026-data-lake}
       PYTHONPATH: /opt/airflow
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
