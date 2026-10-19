@@ -31,6 +31,9 @@
 - [x] Author the Airflow DAG `airflow/dags/risk_batch_ingest.py` to automate the batch ingestion pipeline into BigQuery.
 - [x] Create external tables in BigQuery `raw` dataset pointing to Parquet files in GCS
 - [x] Verify BigQuery table schemas and record counts (590,540 transactions, 144,233 identities)
+- [ ] **Resilience Testing (Mô phỏng sự cố Ingestion)**:
+  - [ ] **Job bị gián đoạn (Job interruption & Idempotency)**: Kích hoạt cờ `SIMULATE_FAILURE = True` trong Airflow DAG; kiểm chứng task retry độc lập và tính Idempotent (ghi đè GCS, `CREATE OR REPLACE EXTERNAL TABLE`).
+  - [ ] **Schema thay đổi (Schema drift tại nguồn)**: Mô phỏng đổi tên cột hoặc thiếu `TransactionID`; kiểm chứng cơ chế Fail-fast tại PyArrow và `audit_transaction_data_quality`.
 
 ---
 
@@ -44,6 +47,10 @@
   - [x] `fraud_risk_summary.sql` (aggregated risk metrics by date, card network, device)
 - [x] Add dbt tests (schema validation, `unique`, `not_null`, `accepted_values`, singular tests)
 - [x] Generate dbt documentation and lineage graph
+- [ ] **Resilience Testing (Mô phỏng sự cố Transformation)**:
+  - [ ] **Dữ liệu đến trễ (Late-arriving data)**: Mô phỏng nạp batch ngày cũ ($T-1$, $T-2$); kiểm chứng BigQuery partition (`transaction_date`) tự động định tuyến bản ghi cũ về đúng ngày và thiết lập lookback window cho incremental model.
+  - [ ] **Dữ liệu trùng lặp (Duplicates & Deduplication)**: Mô phỏng trùng `transaction_id`; kiểm chứng cảnh báo từ `dbt test` (`unique`) và bổ sung deduplication (`QUALIFY ROW_NUMBER() OVER (...)`) ở `stg_transaction.sql`.
+  - [ ] **Dữ liệu không hợp lệ (Invalid data & Quarantine)**: Mô phỏng `transaction_amount <= 0` hoặc nhãn `is_fraud` sai phạm vi; kiểm chứng tests (`assert_positive_amounts`, `assert_valid_fraud_rate`) ngắt pipeline và thiết kế Quarantine Table.
 
 ---
 
@@ -55,6 +62,7 @@
   - [ ] **Rule-based Risk Engine**: Kiểm tra ngưỡng vi phạm tốc độ quẹt thẻ hoặc số tiền đột biến
   - [ ] **Instant Alerting**: Bắn thông báo cảnh báo tức thì kèm chi tiết giao dịch qua Telegram Bot API / Webhook
   - [ ] Ingest sự kiện luồng vào BigQuery / GCS để phục vụ giám sát
+  - [ ] **Streaming Resilience**: Xử lý dữ liệu đến trễ (Watermarking cho out-of-order events) và khử trùng lặp sự kiện theo `TransactionID`.
 
 ---
 
@@ -80,6 +88,6 @@
 ---
 
 ## Phase 7: Documentation & Final Polish
-- [ ] Finalize end-to-end `README.md` with architecture diagram and reproduction steps
+- [ ] Finalize end-to-end `README.md` with architecture diagram, reproduction steps, and Resilience & Edge-case handling documentation
 - [ ] Record a 3–5 minute video demo for Zoomcamp peer review
 - [ ] Code cleanup, formatting, and final repository verification
