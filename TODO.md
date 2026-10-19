@@ -31,11 +31,11 @@
 - [x] Author the Airflow DAG `airflow/dags/risk_batch_ingest.py` to automate the batch ingestion pipeline into BigQuery.
 - [x] Create external tables in BigQuery `raw` dataset pointing to Parquet files in GCS
 - [x] Verify BigQuery table schemas and record counts (590,540 transactions, 144,233 identities)
-- [ ] **Resilience Testing & Alerting (Mô phỏng sự cố Ingestion & Cảnh báo)**:
+- [x] **Resilience Testing & Alerting (Mô phỏng sự cố Ingestion & Cảnh báo)**:
   - [x] **Job bị gián đoạn (Job interruption & Idempotency)**: Kích hoạt cờ `SIMULATE_FAILURE = True` trong Airflow DAG; kiểm chứng task retry độc lập và tính Idempotent (ghi đè GCS, `CREATE OR REPLACE EXTERNAL TABLE`).
 
   - [x] **Cảnh báo lỗi qua Slack (Slack Failure Alerting via `on_failure_callback`)**: Khi task hết số lần retry (`retries exhausted`) và chuyển sang trạng thái `FAILED`, hệ thống phải bắn alert ngay lập tức qua Slack đính kèm link trực tiếp đến Airflow Task Log, Execution Date và DAG ID để kỹ sư on-call truy vết tức thì.
-  - [ ] **Schema thay đổi (Schema drift tại nguồn)**: Mô phỏng đổi tên cột hoặc thiếu `TransactionID`; kiểm chứng cơ chế Fail-fast tại PyArrow và `audit_transaction_data_quality`.
+  - [x] **Schema thay đổi (Schema drift tại nguồn)**: Mô phỏng đổi tên cột hoặc thiếu `TransactionID`; kiểm chứng cơ chế Fail-fast tại PyArrow và `audit_transaction_data_quality`.
 ---
 
 ## Phase 3: Data Warehouse & Transformations (dbt) (Completed)

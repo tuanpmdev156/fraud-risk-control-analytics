@@ -48,8 +48,8 @@ EXPECTED_IDENTITIES = 144233
 
 # Simulate error task
 # 'None' to run normal
-#SIMULATE_FAIL_TASK = "None" 
-SIMULATE_FAIL_TASK = "upload_transaction_to_gcs"
+SIMULATE_FAIL_TASK = "None" 
+#SIMULATE_FAIL_TASK = "upload_transaction_to_gcs"
 
 # ---------------------------------------------------------------------------
 # Python Task Callables
@@ -93,7 +93,10 @@ def convert_csv_to_parquet(file_base_name: str, **context) -> str:
     print(f"Reading CSV: {csv_path}...")
     table = pv.read_csv(csv_path)
 
-    print(f"Writing Snappy Parquet: {pq_path} ({table.num_rows} rows, {table.num_columns} cols)...")
+    if "TransactionID" not in table.column_names:
+        raise ValueError("Schema Drift: Missing required column 'TransactionID'")
+
+    print(f"Convert to Parquet: {pq_path} ({table.num_rows} rows, {table.num_columns} cols)...")
     pq.write_table(table, pq_path, compression="snappy")
 
     csv_mb = csv_path.stat().st_size / (1024 * 1024)
