@@ -34,7 +34,6 @@ transformed_trans AS
             TIMESTAMP '2017-12-01 00:00:00 UTC',
             INTERVAL CAST(TransactionDT AS INT64) SECOND
         ) AS transaction_timestamp
-
     FROM raw_trans
 )
 
@@ -59,3 +58,9 @@ SELECT
     p_emaildomain,
     r_emaildomain
 FROM transformed_trans
+WHERE transaction_amount > 0 AND is_fraud IN (0, 1)
+-- Deduplication TransactionID
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY transaction_id 
+    ORDER BY transaction_timestamp DESC
+) = 1

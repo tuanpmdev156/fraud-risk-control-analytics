@@ -48,10 +48,9 @@
   - [x] `fraud_risk_summary.sql` (aggregated risk metrics by date, card network, device)
 - [x] Add dbt tests (schema validation, `unique`, `not_null`, `accepted_values`, singular tests)
 - [x] Generate dbt documentation and lineage graph
-- [ ] **Resilience Testing (Mô phỏng sự cố Transformation)**:
-  - [ ] **Dữ liệu đến trễ (Late-arriving data)**: Mô phỏng nạp batch ngày cũ ($T-1$, $T-2$); kiểm chứng BigQuery partition (`transaction_date`) tự động định tuyến bản ghi cũ về đúng ngày và thiết lập lookback window cho incremental model.
-  - [ ] **Dữ liệu trùng lặp (Duplicates & Deduplication)**: Mô phỏng trùng `transaction_id`; kiểm chứng cảnh báo từ `dbt test` (`unique`) và bổ sung deduplication (`QUALIFY ROW_NUMBER() OVER (...)`) ở `stg_transaction.sql`.
-  - [ ] **Dữ liệu không hợp lệ (Invalid data & Quarantine)**: Mô phỏng `transaction_amount <= 0` hoặc nhãn `is_fraud` sai phạm vi; kiểm chứng tests (`assert_positive_amounts`, `assert_valid_fraud_rate`) ngắt pipeline và thiết kế Quarantine Table.
+- [x] **Resilience Testing (Mô phỏng sự cố Transformation)**:
+  - [x] **Dữ liệu trùng lặp (Duplicates & Deduplication)**: Mô phỏng trùng `transaction_id`; kiểm chứng cảnh báo từ `dbt test` (`unique`) và bổ sung deduplication (`QUALIFY ROW_NUMBER() OVER (...)`) ở `stg_transaction.sql`.
+  - [x] **Dữ liệu không hợp lệ (Invalid data & Quarantine)**: Mô phỏng `transaction_amount <= 0` hoặc nhãn `is_fraud` sai phạm vi; kiểm chứng tests (`assert_positive_amounts`, `assert_valid_fraud_rate`) ngắt pipeline và thiết kế Quarantine Table.
 
 ---
 

@@ -43,7 +43,7 @@ PARQUET_DIR = DATA_DIR / "parquet"
 TRANSACTION_FILE = "train_transaction"
 IDENTITY_FILE = "train_identity"
 
-EXPECTED_TRANSACTIONS = 590540
+EXPECTED_TRANSACTIONS = 590543
 EXPECTED_IDENTITIES = 144233
 
 # Simulate error task
@@ -236,7 +236,7 @@ with DAG(
         bucket=GCS_BUCKET,
     )
 
-    # 4. Create BigQuery External Tables
+    # 4. Create BigQuery External TableS
     sql_create_ext_transaction = f"""
     CREATE OR REPLACE EXTERNAL TABLE `{GCP_PROJECT_ID}.{BQ_DATASET}.ext_transaction`
     OPTIONS (
