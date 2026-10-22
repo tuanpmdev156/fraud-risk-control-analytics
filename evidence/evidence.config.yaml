@@ -1,0 +1,5 @@
+project:
+  name: Fraud Risk Control Analytics
+  evidence: "0.9.1"
+
+pages: ./pages

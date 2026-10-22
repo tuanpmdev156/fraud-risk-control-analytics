@@ -1,0 +1,7 @@
+type: bigquery
+project: fraud-risk-analytics-131026
+keyfile: ../credentials/pipeline-sa-key.json
+datasets:
+  - production
+  - staging
+location: us-central1

@@ -54,15 +54,16 @@
 
 ---
 
-## Phase 4: Streaming Pipeline (Nâng cấp: Real-time Window Features & Alerting)
-- [ ] Set up Redpanda broker using Docker Compose
-- [ ] Develop event producer (`scripts/streaming/producer.py`) to replay transactions into Kafka topic
-- [ ] Develop stream processor / consumer (`scripts/streaming/consumer.py`):
-  - [ ] **Sliding Window Processing**: Duy trì state in-memory tính toán window metrics (ví dụ: số giao dịch trong 5 phút `txn_count_5m`, tổng tiền `velocity_amt_5m` theo `card1`)
-  - [ ] **Rule-based Risk Engine**: Kiểm tra ngưỡng vi phạm tốc độ quẹt thẻ hoặc số tiền đột biến
-  - [ ] **Instant Alerting**: Bắn thông báo cảnh báo tức thì kèm chi tiết giao dịch qua Telegram Bot API / Webhook
-  - [ ] Ingest sự kiện luồng vào BigQuery / GCS để phục vụ giám sát
-  - [ ] **Streaming Resilience**: Xử lý dữ liệu đến trễ (Watermarking cho out-of-order events) và khử trùng lặp sự kiện theo `TransactionID`.
+## Phase 4: BI Dashboard (Evidence.dev — BI-as-Code)
+- [ ] Initialize Evidence project (`evidence/`) with `npx degit evidence-dev/template`
+- [ ] Configure BigQuery connection (`sources/bigquery/connection.yaml`)
+- [ ] Write source SQL queries (`kpi_overview`, `fraud_trend`, `risk_by_*`, `hourly_heatmap`)
+- [ ] Build dashboard pages (Markdown + SQL):
+  - [ ] `index.md` — Executive Overview: KPI Scorecards (`<BigValue>`), Fraud Trend (`<LineChart>`)
+  - [ ] `risk-breakdown.md` — Risk Analysis: Card Network, Product, Device, Email Domains (`<BarChart>`, `<DataTable>`)
+  - [ ] `heatmap.md` — Hourly Fraud Heatmap (`<Heatmap>`: `transaction_hour` × `day_of_week`)
+  - [ ] `ai-investigation.md` — AI Report Card (placeholder for Phase 5 `mart_ai_insights`)
+- [ ] Build & deploy static site (Vercel / Netlify / GitHub Pages)
 
 ---
 
@@ -77,13 +78,15 @@
 
 ---
 
-## Phase 6: BI Dashboard (Google Looker Studio)
-- [ ] Connect Looker Studio to BigQuery production marts (`fct_transactions`, `mart_fraud_summary`, `mart_ai_insights`)
-- [ ] Build interactive dashboard pages:
-  - [ ] Executive KPI scorecards (Total Transaction Volume, Fraud Rate, Fraud Loss Amount)
-  - [ ] Risk breakdown charts (by Card Network, Product Code, Device Type, Geo Region)
-  - [ ] Hourly Fraud Heatmap (`transaction_hour` vs `day_of_week`)
-  - [ ] AI Executive Summary Card (displaying latest LLM-generated narrative insights & Incident Reports)
+## Phase 6: Streaming Pipeline (Nâng cấp: Real-time Window Features & Alerting)
+- [ ] Set up Redpanda broker using Docker Compose
+- [ ] Develop event producer (`scripts/streaming/producer.py`) to replay transactions into Kafka topic
+- [ ] Develop stream processor / consumer (`scripts/streaming/consumer.py`):
+  - [ ] **Sliding Window Processing**: Duy trì state in-memory tính toán window metrics (ví dụ: số giao dịch trong 5 phút `txn_count_5m`, tổng tiền `velocity_amt_5m` theo `card1`)
+  - [ ] **Rule-based Risk Engine**: Kiểm tra ngưỡng vi phạm tốc độ quẹt thẻ hoặc số tiền đột biến
+  - [ ] **Instant Alerting**: Bắn thông báo cảnh báo tức thì kèm chi tiết giao dịch qua Telegram Bot API / Webhook
+  - [ ] Ingest sự kiện luồng vào BigQuery / GCS để phục vụ giám sát
+  - [ ] **Streaming Resilience**: Xử lý dữ liệu đến trễ (Watermarking cho out-of-order events) và khử trùng lặp sự kiện theo `TransactionID`.
 
 ---
 

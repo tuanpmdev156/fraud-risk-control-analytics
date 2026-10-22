@@ -5,7 +5,7 @@
 ![Airflow](https://img.shields.io/badge/Orchestration-Airflow_2.11-017CEE?logo=apacheairflow&logoColor=white)
 ![Redpanda](https://img.shields.io/badge/Streaming-Redpanda-E4405F?logo=apachekafka&logoColor=white)
 ![dbt](https://img.shields.io/badge/Transform-dbt-FF694B?logo=dbt&logoColor=white)
-![Looker Studio](https://img.shields.io/badge/Dashboard-Looker_Studio-4285F4?logo=looker&logoColor=white)
+![Evidence](https://img.shields.io/badge/Dashboard-Evidence.dev-4F46E5?logo=data:image/svg+xml;base64,&logoColor=white)
 ![AI](https://img.shields.io/badge/AI-LLM_Narration-8A2BE2?logo=openai&logoColor=white)
 
 ---
@@ -86,7 +86,7 @@ The project utilizes the benchmark **IEEE-CIS Fraud Detection** dataset ([Kaggle
 | **Transformation** | dbt-core + dbt-bigquery | SQL-based ELT with lineage, testing, schema control |
 | **DW Design** | Medallion (Raw→Staging→Prod) | Partitioning by `transaction_date`, clustering by `product_cd`, `card_type`, `is_fraud` |
 | **AI Layer** | OpenAI SDK (Provider-Agnostic) | Flexible: DeepSeek, Groq, OpenAI, or Ollama local |
-| **Dashboard** | Google Looker Studio | Native BigQuery integration, interactive filters, free & shareable |
+| **Dashboard** | Evidence.dev (BI-as-Code) | Markdown + SQL, Git version-controlled, static site deployment, native Heatmap |
 
 ---
 
