@@ -72,7 +72,7 @@ title: Fraud Risk Analytics Dashboard
         <Column id=total_transaction title="Total Txns" fmt="num0" />
         <Column id=fraud_transaction title="Fraud Txns" fmt="num0" />
         <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
-        <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+        <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
     </DataTable>
 </Grid>
 
@@ -102,8 +102,8 @@ title: Fraud Risk Analytics Dashboard
     <Column id=total_transactions title="Total Txns" fmt="num0" />
     <Column id=fraud_transactions title="Fraud Txns" fmt="num0" />
     <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
-    <Column id=total_amount title="Total Amount" fmt="usd2" />
-    <Column id=total_fraud_amount title="Fraud Amount" fmt="usd2" />
+    <Column id=total_amount title="Total Amt" fmt="usd2" />
+    <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
 </DataTable>
 
 ### By Card Network
@@ -113,7 +113,7 @@ title: Fraud Risk Analytics Dashboard
     <Column id=total_txns title="Total Txns" fmt="num0" />
     <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
     <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
-    <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+    <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
 </DataTable>
 
 ### By Device Type
@@ -123,7 +123,7 @@ title: Fraud Risk Analytics Dashboard
     <Column id=total_txns title="Total Txns" fmt="num0" />
     <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
     <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
-    <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+    <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
 </DataTable>
 
 ### Amount Buckets
@@ -133,7 +133,7 @@ title: Fraud Risk Analytics Dashboard
     <Column id=total_txns title="Total Txns" fmt="num0" />
     <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
     <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
-    <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+    <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
 </DataTable>
 
 ```sql kpi_overview
