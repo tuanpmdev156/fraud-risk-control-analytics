@@ -137,11 +137,24 @@ title: Fraud Risk Analytics Dashboard
 </DataTable>
 
 ```sql kpi_overview
-SELECT * FROM bigquery.kpi_overview
+SELECT
+    SUM(total_transaction) AS total_transactions,
+    ROUND(SAFE_DIVIDE(SUM(fraud_transaction), SUM(total_transaction)), 4) AS fraud_rate_pct,
+    SUM(fraud_transaction) AS total_fraud_transactions,
+    ROUND(SUM(total_fraud_amount) / 1000000, 2) AS total_fraud_amount,
+    ROUND(SUM(total_amount) / 1000000, 2) AS total_amount
+FROM production.fraud_risk_summary
 ```
 
 ```sql top_risk_product
-SELECT * FROM bigquery.top_risk_product
+SELECT
+    product_code AS product,
+    ROUND(SAFE_DIVIDE(SUM(fraud_transaction), SUM(total_transaction)), 4) AS fraud_rate_pct
+FROM production.fraud_risk_summary
+GROUP BY product_code
+ORDER BY fraud_rate_pct DESC
+LIMIT 1
+
 ```
 
 ```sql daily
