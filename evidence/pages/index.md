@@ -72,6 +72,7 @@ title: Fraud Risk Analytics Dashboard
         <Column id=total_transaction title="Total Txns" fmt="num0" />
         <Column id=fraud_transaction title="Fraud Txns" fmt="num0" />
         <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+        <Column id=total_amount title="Total Amt" fmt="usd2" />
         <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
     </DataTable>
 </Grid>
@@ -113,6 +114,7 @@ title: Fraud Risk Analytics Dashboard
     <Column id=total_txns title="Total Txns" fmt="num0" />
     <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
     <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+    <Column id=total_amount title="Total Amt" fmt="usd2" />
     <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
 </DataTable>
 
@@ -123,6 +125,7 @@ title: Fraud Risk Analytics Dashboard
     <Column id=total_txns title="Total Txns" fmt="num0" />
     <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
     <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+    <Column id=total_amount title="Total Amt" fmt="usd2" />
     <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
 </DataTable>
 
@@ -133,6 +136,7 @@ title: Fraud Risk Analytics Dashboard
     <Column id=total_txns title="Total Txns" fmt="num0" />
     <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
     <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+    <Column id=total_amount title="Total Amt" fmt="usd2" />
     <Column id=total_fraud_amount title="Fraud Amt" fmt="usd2" />
 </DataTable>
 
@@ -151,7 +155,7 @@ SELECT
     product_code AS product,
     ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct
 FROM bigquery.fraud_risk_summary
-GROUP BY product_code
+GROUP BY 1
 ORDER BY fraud_rate_pct DESC
 LIMIT 1
 ```
@@ -165,7 +169,7 @@ SELECT
     ROUND(SUM(total_amount), 2) AS total_amount,
     ROUND(SUM(total_fraud_amount), 2) AS total_fraud_amount
 FROM bigquery.fraud_risk_summary
-GROUP BY transaction_date
+GROUP BY 1
 ORDER BY transaction_date
 ```
 
@@ -175,9 +179,10 @@ SELECT
     SUM(total_transaction) AS total_transaction,
     SUM(fraud_transaction) AS fraud_transaction,
     ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
+    SUM(total_amount) AS total_amount,
     SUM(total_fraud_amount) AS total_fraud_amount
 FROM bigquery.fraud_risk_summary
-GROUP BY product_code
+GROUP BY 1
 ORDER BY fraud_rate_pct DESC
 ```
 
@@ -187,9 +192,10 @@ SELECT
     SUM(total_transaction) AS total_txns,
     SUM(fraud_transaction) AS fraud_txns,
     ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
+    SUM(total_amount) AS total_amount,
     SUM(total_fraud_amount) AS total_fraud_amount
 FROM bigquery.fraud_risk_summary
-GROUP BY card_network
+GROUP BY 1
 ORDER BY fraud_rate_pct DESC
 ```
 
@@ -199,9 +205,10 @@ SELECT
     SUM(total_transaction) AS total_txns,
     SUM(fraud_transaction) AS fraud_txns,
     ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
+    SUM(total_amount) AS total_amount,
     SUM(total_fraud_amount) AS total_fraud_amount
 FROM bigquery.fraud_risk_summary
-GROUP BY device_type
+GROUP BY 1
 ORDER BY fraud_rate_pct DESC
 ```
 
@@ -211,9 +218,9 @@ SELECT
     SUM(total_txns) AS total_txns,
     SUM(fraud_txns) AS fraud_txns,
     ROUND(SUM(fraud_txns) * 1.0 / NULLIF(SUM(total_txns), 0), 4) AS fraud_rate_pct,
-    ROUND(SUM(total_amt), 2) AS total_amt,
+    ROUND(SUM(total_amt), 2) AS total_amount,
     SUM(total_fraud_amount) AS total_fraud_amount
 FROM bigquery.amount_buckets
-GROUP BY amount_level
+GROUP BY 1
 ORDER BY fraud_rate_pct DESC
 ```
