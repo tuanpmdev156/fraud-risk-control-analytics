@@ -4,13 +4,11 @@
 
 1. **Batch Pipeline**: Ingest dữ liệu lịch sử đã có sẵn nhãn (`train_transaction.csv` có nhãn `isFraud`) qua GCS → BigQuery External Tables tự động qua Airflow.
 
-2. **Transformation (dbt)**: Xử lý, làm sạch và mô hình hóa Medallion (`stg_*`, `fct_transactions`, `mart_fraud_summary`) tối ưu partition & cluster.
+2. **Transformation (dbt)**: Xử lý, làm sạch và mô hình hóa Medallion (`stg_*`, `fct_transaction`, `fraud_risk_summary`) tối ưu partition & cluster.
 
-3. **Streaming Pipeline (Nâng cấp)**: Replay luồng giao dịch qua Redpanda, tính toán **Sliding Window Features** (vận tốc giao dịch, tần suất quẹt thẻ trong 5-10 phút) và kích hoạt **Instant Alerting qua Telegram Bot** khi chạm ngưỡng rủi ro cao.
+3. **BI Dashboard (Evidence.dev — BI-as-Code)**: Hiển thị báo cáo giám sát rủi ro đa chiều (KPIs, Risk breakdown, Hourly Heatmap).
 
-4. **BI Dashboard (Looker Studio)**: Hiển thị báo cáo giám sát rủi ro đa chiều (KPIs, Risk breakdown, Hourly Heatmap, AI Incident Report Card).
-
-5. **Agentic AI Layer (Nâng cấp)**: **Agentic Root-Cause Investigator** sử dụng Tool/Function Calling (`execute_bigquery_sql`) để tự động drill-down, truy vấn BigQuery tìm nguyên nhân gốc rễ bất thường và lập bản **Incident Report** hoàn chỉnh.
+4. **CI/CD Pipeline (GitHub Actions)**: Tự động hóa kiểm tra chất lượng dữ liệu (`dbt test` / `dbt compile`) và kiểm tra/triển khai hạ tầng (`Terraform`) khi push code hoặc tạo Pull Request.
 
 ---
 
@@ -54,43 +52,26 @@
 
 ---
 
-## Phase 4: BI Dashboard (Evidence.dev — BI-as-Code)
-- [ ] Initialize Evidence project (`evidence/`) with `npx degit evidence-dev/template`
-- [ ] Configure BigQuery connection (`sources/bigquery/connection.yaml`)
-- [ ] Write source SQL queries (`kpi_overview`, `fraud_trend`, `risk_by_*`, `hourly_heatmap`)
-- [ ] Build dashboard pages (Markdown + SQL):
-  - [ ] `index.md` — Executive Overview: KPI Scorecards (`<BigValue>`), Fraud Trend (`<LineChart>`)
-  - [ ] `risk-breakdown.md` — Risk Analysis: Card Network, Product, Device, Email Domains (`<BarChart>`, `<DataTable>`)
-  - [ ] `heatmap.md` — Hourly Fraud Heatmap (`<Heatmap>`: `transaction_hour` × `day_of_week`)
-  - [ ] `ai-investigation.md` — AI Report Card (placeholder for Phase 5 `mart_ai_insights`)
-- [ ] Build & deploy static site (Vercel / Netlify / GitHub Pages)
+## Phase 4: BI Dashboard (Evidence.dev — BI-as-Code) (Completed)
+- [x] Initialize Evidence Studio project ([`evidence/`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence)) and configure [`evidence.config.yaml`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/evidence.config.yaml) & [`theme.yaml`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/theme.yaml)
+- [x] Configure BigQuery connection ([`evidence/connection.yaml`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/connection.yaml))
+- [x] Write source SQL queries in [`evidence/queries/`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries):
+  - [x] [`kpi_overview.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/kpi_overview.sql) & [`top_risk_product.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/top_risk_product.sql) (Executive KPI metrics)
+  - [x] [`daily.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/daily.sql) & [`fraud_trend.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/fraud_trend.sql) (Daily transaction volume & fraud trends)
+  - [x] [`fraud_by_product.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/fraud_by_product.sql), [`fraud_by_card.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/fraud_by_card.sql), [`fraud_by_device.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/fraud_by_device.sql) (Multi-dimensional risk breakdown)
+  - [x] [`amount_buckets.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/amount_buckets.sql) (Risk analysis by transaction size)
+  - [x] [`narration.sql`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/queries/narration.sql) (AI Insights & executive narration)
+- [x] Build unified dashboard in [`evidence/pages/index.md`](file:///d:/4.DE-zoomcamp/projects/fraud-risk-control-analytics/evidence/pages/index.md) (Markdoc + SQL):
+  - [x] **Executive Scorecards**: `{% big_value %}` (Total Transactions, Overall Fraud Rate, Fraud Exposure, Highest Risk Product)
+  - [x] **Daily Fraud Activity**: `{% combo_chart %}` (Dual-axis transaction volume & fraud count trend)
+  - [x] **Fraud Distribution & Profile Breakdown**: `{% horizontal_bar_chart %}` & `{% table %}` (Product Code, Card Network, Device Type)
+  - [x] **Risk by Transaction Size**: `{% bar_chart %}` across amount buckets (`micro`, `low`, `medium`, `high`, `critical`)
+  - [x] **Data Sources & Inspection**: Detailed interactive `{% table %}` views for underlying datasets
+- [ ] Publish / deploy Evidence report (Evidence Studio Cloud / static build)
 
 ---
 
-## Phase 5: Agentic AI Layer (Nâng cấp: Root-Cause Investigator)
-- [ ] Develop `scripts/generate_narration.py` (hoặc `scripts/ai_investigator.py`):
-  - [ ] **Anomaly Trigger**: Tự động phát hiện bất thường từ `mart_fraud_summary` (tỷ lệ gian lận tăng đột biến > ngưỡng cho phép)
-  - [ ] **Function Calling Engine**: Cung cấp tool `execute_bigquery_sql` cho LLM (OpenAI / DeepSeek / Groq)
-  - [ ] **ReAct Investigation Loop**: LLM tự động đặt giả thuyết và sinh câu lệnh SQL drill-down vào `fct_transactions` và `stg_identity` (bóc tách theo `card4`, `DeviceType`, `P_emaildomain`, `addr1`)
-  - [ ] **Incident Report Generation**: Xuất bản báo cáo chuẩn gồm: Executive Summary, Root-Cause Analysis, Actionable Mitigations và SQL Audit Trail
-  - [ ] Ghi báo cáo điều tra vào BigQuery table `mart_ai_insights`
-- [ ] Tích hợp task điều tra AI vào Airflow DAG sau khi hoàn thành dbt run
-
----
-
-## Phase 6: Streaming Pipeline (Nâng cấp: Real-time Window Features & Alerting)
-- [ ] Set up Redpanda broker using Docker Compose
-- [ ] Develop event producer (`scripts/streaming/producer.py`) to replay transactions into Kafka topic
-- [ ] Develop stream processor / consumer (`scripts/streaming/consumer.py`):
-  - [ ] **Sliding Window Processing**: Duy trì state in-memory tính toán window metrics (ví dụ: số giao dịch trong 5 phút `txn_count_5m`, tổng tiền `velocity_amt_5m` theo `card1`)
-  - [ ] **Rule-based Risk Engine**: Kiểm tra ngưỡng vi phạm tốc độ quẹt thẻ hoặc số tiền đột biến
-  - [ ] **Instant Alerting**: Bắn thông báo cảnh báo tức thì kèm chi tiết giao dịch qua Telegram Bot API / Webhook
-  - [ ] Ingest sự kiện luồng vào BigQuery / GCS để phục vụ giám sát
-  - [ ] **Streaming Resilience**: Xử lý dữ liệu đến trễ (Watermarking cho out-of-order events) và khử trùng lặp sự kiện theo `TransactionID`.
-
----
-
-## Phase 7: Documentation & Final Polish
+## Phase 5: Documentation & Final Polish
 - [ ] Finalize end-to-end `README.md` with architecture diagram, reproduction steps, and Resilience & Edge-case handling documentation
 - [ ] Record a 3–5 minute video demo for Zoomcamp peer review
 - [ ] Code cleanup, formatting, and final repository verification

@@ -1,0 +1,64 @@
+name: Deploy Evidence to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'evidence/**'
+      - '.github/workflows/deploy-evidence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: ./evidence
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: './evidence/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run BigQuery Sources
+        run: npm run sources
+        env:
+          EVIDENCE_SOURCE__bigquery__project_id: ${{ secrets.EVIDENCE_SOURCE__bigquery__project_id }}
+          EVIDENCE_SOURCE__bigquery__client_email: ${{ secrets.EVIDENCE_SOURCE__bigquery__client_email }}
+          EVIDENCE_SOURCE__bigquery__private_key: ${{ secrets.EVIDENCE_SOURCE__bigquery__private_key }}
+
+      - name: Build Static Site
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./evidence/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
