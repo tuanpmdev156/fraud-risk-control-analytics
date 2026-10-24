@@ -139,40 +139,81 @@ title: Fraud Risk Analytics Dashboard
 ```sql kpi_overview
 SELECT
     SUM(total_transaction) AS total_transactions,
-    ROUND(SAFE_DIVIDE(SUM(fraud_transaction), SUM(total_transaction)), 4) AS fraud_rate_pct,
+    ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
     SUM(fraud_transaction) AS total_fraud_transactions,
-    ROUND(SUM(total_fraud_amount) / 1000000, 2) AS total_fraud_amount,
-    ROUND(SUM(total_amount) / 1000000, 2) AS total_amount
-FROM production.fraud_risk_summary
+    ROUND(SUM(total_fraud_amount) / 1000000.0, 2) AS total_fraud_amount,
+    ROUND(SUM(total_amount) / 1000000.0, 2) AS total_amount
+FROM bigquery.fraud_risk_summary
 ```
 
 ```sql top_risk_product
 SELECT
     product_code AS product,
-    ROUND(SAFE_DIVIDE(SUM(fraud_transaction), SUM(total_transaction)), 4) AS fraud_rate_pct
-FROM production.fraud_risk_summary
+    ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct
+FROM bigquery.fraud_risk_summary
 GROUP BY product_code
 ORDER BY fraud_rate_pct DESC
 LIMIT 1
-
 ```
 
 ```sql daily
-SELECT * FROM bigquery.daily ORDER BY transaction_date
+SELECT
+    transaction_date,
+    SUM(total_transaction) AS total_transactions,
+    SUM(fraud_transaction) AS fraud_transactions,
+    ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
+    ROUND(SUM(total_amount), 2) AS total_amount,
+    ROUND(SUM(total_fraud_amount), 2) AS total_fraud_amount
+FROM bigquery.fraud_risk_summary
+GROUP BY transaction_date
+ORDER BY transaction_date
 ```
 
 ```sql fraud_by_product
-SELECT * FROM bigquery.fraud_by_product ORDER BY fraud_rate_pct DESC
+SELECT
+    product_code,
+    SUM(total_transaction) AS total_transaction,
+    SUM(fraud_transaction) AS fraud_transaction,
+    ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
+    SUM(total_fraud_amount) AS total_fraud_amount
+FROM bigquery.fraud_risk_summary
+GROUP BY product_code
+ORDER BY fraud_rate_pct DESC
 ```
 
 ```sql fraud_by_card
-SELECT * FROM bigquery.fraud_by_card ORDER BY fraud_rate_pct DESC
+SELECT
+    COALESCE(NULLIF(card_network, ''), 'other') AS card_network,
+    SUM(total_transaction) AS total_txns,
+    SUM(fraud_transaction) AS fraud_txns,
+    ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
+    SUM(total_fraud_amount) AS total_fraud_amount
+FROM bigquery.fraud_risk_summary
+GROUP BY card_network
+ORDER BY fraud_rate_pct DESC
 ```
 
 ```sql fraud_by_device
-SELECT * FROM bigquery.fraud_by_device ORDER BY fraud_rate_pct DESC
+SELECT
+    COALESCE(NULLIF(device_type, ''), 'unknown') AS device_type,
+    SUM(total_transaction) AS total_txns,
+    SUM(fraud_transaction) AS fraud_txns,
+    ROUND(SUM(fraud_transaction) * 1.0 / NULLIF(SUM(total_transaction), 0), 4) AS fraud_rate_pct,
+    SUM(total_fraud_amount) AS total_fraud_amount
+FROM bigquery.fraud_risk_summary
+GROUP BY device_type
+ORDER BY fraud_rate_pct DESC
 ```
 
 ```sql amount_buckets
-SELECT * FROM bigquery.amount_buckets ORDER BY fraud_rate_pct DESC
+SELECT
+    amount_level,
+    SUM(total_txns) AS total_txns,
+    SUM(fraud_txns) AS fraud_txns,
+    ROUND(SUM(fraud_txns) * 1.0 / NULLIF(SUM(total_txns), 0), 4) AS fraud_rate_pct,
+    ROUND(SUM(total_amt), 2) AS total_amt,
+    SUM(total_fraud_amount) AS total_fraud_amount
+FROM bigquery.amount_buckets
+GROUP BY amount_level
+ORDER BY fraud_rate_pct DESC
 ```
