@@ -1,123 +1,55 @@
 ---
-title: Home
-theme:
-  colors:
-    base:
-      light: "#FDF8F0"
-      dark: "#1A1A1A"
-    card:
-      light: "#FFFFFF"
-      dark: "#24201D"
-    cardLayoutBackground:
-      light: "#FDF8F0"
-      dark: "#1A1A1A"
-    positive:
-      light: "#2B6B5E"
-      dark: "#2B6B5E"
-    negative:
-      light: "#C23D2E"
-      dark: "#C23D2E"
-  colorPalettes:
-    default:
-      light: ["#C23D2E", "#4A7FB5", "#2B6B5E", "#D4890A", "#7B6B8A", "#8C8279"]
-      dark: ["#C23D2E", "#4A7FB5", "#2B6B5E", "#D4890A", "#7B6B8A", "#8C8279"]
-  fonts:
-    heading: serif
-    body: sans-serif
-    mono: mono
-  chart:
-    gridlines: true
-    gridlineColor:
-      light: "#EDE6DA"
-    axisLabelColor:
-      light: "#8C8279"
-    barRadius: 0
+title: Fraud Risk Analytics Dashboard
 ---
-
-# Fraud Risk Analytics Dashboard
-
 
 ## Executive Scorecards
 
-{% row %}
-  {% big_value
-      data="/queries/kpi_overview"
-      value="total_transactions"
-      title="Transactions Analyzed"
-      fmt="num0"
-  /%}
-  {% big_value
-      data="/queries/kpi_overview"
-      value="fraud_rate_pct"
-      title="Overall Fraud Rate"
-      fmt="pct2"
-  /%}
-  {% big_value
-      data="/queries/kpi_overview"
-      value="total_fraud_amount"
-      title="Fraud Exposure ($M)"
-      fmt="usd1"
-  /%}
-  {% big_value
-      data="/queries/top_risk_product"
-      value="product"
-      title="Highest Risk Product"
-  /%}
-{% /row %}
+<BigValue data={kpi_overview} value=total_transactions title="Transactions Analyzed" fmt="num0" />
+<BigValue data={kpi_overview} value=fraud_rate_pct title="Overall Fraud Rate" fmt="pct2" />
+<BigValue data={kpi_overview} value=total_fraud_amount title="Fraud Exposure ($M)" fmt="usd1" />
+<BigValue data={top_risk_product} value=product title="Highest Risk Product" />
 
 ---
 
 ## Daily Fraud Activity
 
-> Transaction volume and fraud rate across the observation period.
+> Transaction volume and fraud count across the observation period.
 
-{% combo_chart
-    data="/queries/daily"
-    x="transaction_date"
-    y_fmt="num0"
-%}
-    {% line y="fraud_transactions" /%}
-    {% line y="total_transactions" axis="y1"  /%}
-{% /combo_chart %}
+<LineChart
+    data={daily}
+    x=transaction_date
+    y={['total_transactions', 'fraud_transactions']}
+    yAxisTitle="Total Transactions"
+    yFmt="num0"
+    colorPalette={['#4A7FB5', '#C23D2E']}
+/>
 
 ---
 
 ## Fraud Distribution by Category
 
-> Fraud rate and transaction volume across product codes and card networks.
+> Fraud rate across product codes and card networks.
 
-{% row %}
-  {% horizontal_bar_chart
-      data="/queries/fraud_by_product"
-      y="product_code"
-      x="fraud_rate_pct"
-      x_axis_options={ 
-        title="Fraud Rate %"
-        show_title=true 
-      }
-      bar_options={
-          color="#4A7FB5"
-      }
-      title="BY PRODUCT CODE"
-      x_fmt="pct1"
-      data_labels={ position = "right" }
-  /%}
-  {% horizontal_bar_chart
-      data="/queries/fraud_by_card"
-      y="card_network"
-      x="fraud_rate_pct"
-      bar_options={
-          color="#C23D2E"
-      }
-      x_axis_options={ 
-        title="Fraud Rate %"
-        show_title=true 
-      }
-      title="BY CARD NETWORK"
-      x_fmt="pct1"
-      data_labels={ position = "right" }
-  /%}
-{% /row %}
+<Grid cols=2>
+    <BarChart
+        data={fraud_by_product}
+        x=product_code
+        y=fraud_rate_pct
+        swapXY=true
+        title="BY PRODUCT CODE"
+        yFmt="pct1"
+        fillColor="#4A7FB5"
+    />
+    <BarChart
+        data={fraud_by_card}
+        x=card_network
+        y=fraud_rate_pct
+        swapXY=true
+        title="BY CARD NETWORK"
+        yFmt="pct1"
+        fillColor="#C23D2E"
+    />
+</Grid>
 
 ---
 
@@ -125,34 +57,24 @@ theme:
 
 > Fraud patterns by client device type and product-level risk breakdown.
 
-{% row %}
-  {% horizontal_bar_chart
-      data="/queries/fraud_by_device"
-      y="device_type"
-      x="fraud_rate_pct"
-      bar_options={
-          color="#2B6B5E"
-      }
-      x_axis_options={ 
-        title="Fraud Rate %"
-        show_title=true 
-      }
-      title="BY DEVICE TYPE"
-      x_fmt="pct2"
-      data_labels={ position = "right" }
-  /%}
-  {% table 
-    data="/queries/fraud_by_product"
-    title="PRODUCT CODE SUMMARY"
-    order="fraud_rate_pct desc"
-  %}
-    {% dimension value="product_code" title="Product" /%}
-    {% measure value="total_transaction" title="Total Txns" fmt="num0" /%}
-    {% measure value="fraud_transaction" title="Fraud Txns" fmt="num0" /%}
-    {% measure value="fraud_rate_pct" title="Fraud Rate" fmt="pct2" /%}
-    {% measure value="total_fraud_amount" title="Total Fraud Amt" fmt="usd2" /%}
-  {% /table %}
-{% /row %}
+<Grid cols=2>
+    <BarChart
+        data={fraud_by_device}
+        x=device_type
+        y=fraud_rate_pct
+        swapXY=true
+        title="BY DEVICE TYPE"
+        yFmt="pct2"
+        fillColor="#2B6B5E"
+    />
+    <DataTable data={fraud_by_product} title="PRODUCT CODE SUMMARY">
+        <Column id=product_code title="Product" />
+        <Column id=total_transaction title="Total Txns" fmt="num0" />
+        <Column id=fraud_transaction title="Fraud Txns" fmt="num0" />
+        <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+        <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+    </DataTable>
+</Grid>
 
 ---
 
@@ -160,70 +82,84 @@ theme:
 
 > Fraud rate across amount buckets — higher-value transactions show elevated risk.
 
-{% bar_chart
-    data="/queries/amount_buckets"
-    x="amount_level"
-    y="fraud_rate_pct"
-    bar_options={
-          color="#D4890A"
-      }
-    subtitle="Amount buckets: micro(<$50), low($50–$100), medium($100–$500),high($500–$2,000), critical(>$2,000)"
-    y_fmt="pct2"
-/%}
+<BarChart
+    data={amount_buckets}
+    x=amount_level
+    y=fraud_rate_pct
+    yFmt="pct2"
+    fillColor="#D4890A"
+    subtitle="Amount buckets: micro(<$50), low($50–$100), medium($100–$500), high($500–$2,000), critical(>$2,000)"
+/>
 
 ---
 
 ## Data Sources & Inspection
 
-> Queries powering this dashboard, sourced from BigQuery production dataset.
-
 ### Daily Trend
 
-{% table data="/queries/daily" order="transaction_date asc"%}
-  {% dimension value="transaction_date" title="Transaction Date" /%}
-  {% measure value="total_transactions" title="Total Txns" fmt="num0" /%}
-  {% measure value="fraud_transactions" title="Fraud Txns" fmt="num0" /%}
-  {% measure value="fraud_rate_pct" title="Fraud Rate" fmt="pct2" /%}
-  {% measure value="total_amount" title="Total Amount" fmt="usd2" /%}
-  {% measure value="total_fraud_amount" title="Fraud Amount" fmt="usd2" /%}
-{% /table %}
-
-### By Product Code
-
-{% table data="/queries/fraud_by_product" order="fraud_rate_pct desc" %}
-  {% dimension value="product_code" title="Product" /%}
-  {% measure value="total_transaction" title="Total Txns" fmt="num0" /%}
-  {% measure value="fraud_transaction" title="Fraud Txns" fmt="num0" /%}
-  {% measure value="fraud_rate_pct" title="Fraud Rate" fmt="pct2" /%}
-  {% measure value="total_fraud_amount" title="Total Fraud Amt" fmt="usd2" /%}
-{% /table %}
+<DataTable data={daily}>
+    <Column id=transaction_date title="Transaction Date" />
+    <Column id=total_transactions title="Total Txns" fmt="num0" />
+    <Column id=fraud_transactions title="Fraud Txns" fmt="num0" />
+    <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+    <Column id=total_amount title="Total Amount" fmt="usd2" />
+    <Column id=total_fraud_amount title="Fraud Amount" fmt="usd2" />
+</DataTable>
 
 ### By Card Network
 
-{% table data="/queries/fraud_by_card" order="fraud_rate_pct desc" %}
-  {% dimension value="card_network" title="Card Network" /%}
-  {% measure value="total_txns" title="Total Txns" fmt="num0" /%}
-  {% measure value="fraud_txns" title="Fraud Txns" fmt="num0" /%}
-  {% measure value="fraud_rate_pct" title="Fraud Rate" fmt="pct2" /%}
-  {% measure value="total_fraud_amount" title="Total Fraud Amt" fmt="usd2" /%}
-{% /table %}
+<DataTable data={fraud_by_card}>
+    <Column id=card_network title="Card Network" />
+    <Column id=total_txns title="Total Txns" fmt="num0" />
+    <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
+    <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+    <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+</DataTable>
 
 ### By Device Type
 
-{% table data="/queries/fraud_by_device" order="fraud_rate_pct desc" %}
-  {% dimension value="device_type" title="Device Type" /%}
-  {% measure value="total_txns" title="Total Txns" fmt="num0" /%}
-  {% measure value="fraud_txns" title="Fraud Txns" fmt="num0" /%}
-  {% measure value="fraud_rate_pct" title="Fraud Rate" fmt="pct2" /%}
-  {% measure value="total_fraud_amount" title="Total Fraud Amt" fmt="usd2" /%}
-{% /table %}
+<DataTable data={fraud_by_device}>
+    <Column id=device_type title="Device Type" />
+    <Column id=total_txns title="Total Txns" fmt="num0" />
+    <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
+    <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+    <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+</DataTable>
 
 ### Amount Buckets
 
-{% table data="/queries/amount_buckets" order="fraud_rate_pct desc" %}
-  {% dimension value="amount_level" title="Amount Level" /%}
-  {% measure value="total_txns" title="Total Txns" fmt="num0" /%}
-  {% measure value="fraud_txns" title="Fraud Txns" fmt="num0" /%}
-  {% measure value="fraud_rate_pct" title="Fraud Rate" fmt="pct2" /%}
-  {% measure value="total_fraud_amount" title="Total Fraud Amt" fmt="usd2" /%}
-{% /table %}
+<DataTable data={amount_buckets}>
+    <Column id=amount_level title="Amount Level" />
+    <Column id=total_txns title="Total Txns" fmt="num0" />
+    <Column id=fraud_txns title="Fraud Txns" fmt="num0" />
+    <Column id=fraud_rate_pct title="Fraud Rate" fmt="pct2" />
+    <Column id=total_fraud_amount title="Total Fraud Amt" fmt="usd2" />
+</DataTable>
+
+```sql kpi_overview
+SELECT * FROM bigquery.kpi_overview
+```
+
+```sql top_risk_product
+SELECT * FROM bigquery.top_risk_product
+```
+
+```sql daily
+SELECT * FROM bigquery.daily ORDER BY transaction_date
+```
+
+```sql fraud_by_product
+SELECT * FROM bigquery.fraud_by_product ORDER BY fraud_rate_pct DESC
+```
+
+```sql fraud_by_card
+SELECT * FROM bigquery.fraud_by_card ORDER BY fraud_rate_pct DESC
+```
+
+```sql fraud_by_device
+SELECT * FROM bigquery.fraud_by_device ORDER BY fraud_rate_pct DESC
+```
+
+```sql amount_buckets
+SELECT * FROM bigquery.amount_buckets ORDER BY fraud_rate_pct DESC
+```
