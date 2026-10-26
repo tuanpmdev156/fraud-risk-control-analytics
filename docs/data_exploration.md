@@ -21,9 +21,6 @@ The dataset used is the **IEEE-CIS Fraud Detection** benchmark (provided by Vest
 
 ## 2. Detailed Data Profiling
 
-![alt text](../images/eda3.png)
-![alt text](../images/eda1.png)
-
 ### 2.1. Target Risk Label Distribution (`isFraud`)
 * Total transactions: **590,540**
   * Legitimate (`isFraud = 0`): **569,877** transactions (~**96.50%**)
@@ -33,26 +30,29 @@ The dataset used is the **IEEE-CIS Fraud Detection** benchmark (provided by Vest
   - **Severe Class Imbalance**: Fraud accounts for only ~3.50% of all transactions, which is typical for fraud detection datasets.
   - **Right-Skewed Transaction Amounts**: There is a large gap between the mean and the median (50th percentile). This indicates a heavily right-skewed, requiring careful consideration during downstream modeling and analytics.
 
-### 2.2. Transaction & Identity Relationship
+![alt text](../images/eda3.png)
+![alt text](../images/eda1.png)
 
-![alt text](../images/eda2.png)
+### 2.2. Transaction & Identity Relationship
 
 * **Join Key**: `TransactionID` (1:1 relationship).
 * **Coverage**: Only approximately **24.4%** of records in `train_transaction` have a matching identity record in `train_identity`.
 * **Business Context**: Only online purchases track digital identity details (device, IP, and browser); in-person card transactions do not.
 
+![alt text](../images/eda2.png)
+
 ### 2.3. Feature Groups & Technical Notes
 
 1. **Identifier & Temporal Features**:
    * `TransactionID`: Unique primary key.
-   * `TransactionDT`: Timedelta in seconds relative to a reference timestamp. Must be converted into `transaction_timestamp` and `transaction_date` during the dbt transformation stage to support date-based partitioning.
+   * `TransactionDT`: Timedelta in seconds relative to a reference timestamp. Must be converted into `transaction_timestamp` and `transaction_date` during transformation stage to support date-based partitioning.
 2. **Transaction & Card Attributes**:
    * `TransactionAmt`: Transaction amount.
    * `ProductCD`: Product code.
    * `card1` – `card6`:
      * `card1`, `card2`: Bank and branch identification codes.
-     * `card4`: Card network / brand (e.g., Visa, Mastercard).
-     * `card6`: Card category / funding type (e.g., credit, debit).
+     * `card4`: Card network / brand.
+     * `card6`: Card category / funding type).
 
 ![alt text](../images/eda4.png)
 
@@ -71,7 +71,7 @@ The dataset used is the **IEEE-CIS Fraud Detection** benchmark (provided by Vest
 ![alt text](../images/eda6.png)
 
 5. **Column Naming Quirks**:
-   * In `train_identity.csv`, column names use underscores: `id_01` $\rightarrow$ `id_38`.
+   * In `train_identity.csv`, column names use underscores: .`id_01` $\rightarrow$ `id_38`.
    * **dbt / Staging Rule**: Standardize column names (replacing hyphens `-` with underscores `_`) during ingestion and staging to ensure a consistent schema across environments.
   
 ![alt text](../images/eda7.png)
@@ -82,12 +82,8 @@ The dataset used is the **IEEE-CIS Fraud Detection** benchmark (provided by Vest
 
 ### 3.1. Column Pruning (Lean Selection: ~20–22 Columns)
 
-![alt text](../images/eda12.png)
-
-![alt text](../images/eda13.png)
-
 * The original dataset contains **over 400 columns**, mostly consisting of 339 anonymous features (`V1`–`V339`) with heavy missing values and limited business meaning.
-* **Architecture Decision (Lean Approach)**: To minimize BigQuery scan costs and keep data pipelines simple, we only bring **~20–22 essential columns** into dbt staging and data marts:
+* Architecture Decision  To minimize BigQuery scan costs and keep data pipelines simple, we only bring **~20–22 essential columns** into dbt staging and data marts:
   * **18 Raw Features** (selected during EDA):
     * **Keys & Target**: `TransactionID`, `TransactionDT`, `isFraud`
     * **Transaction Metrics**: `TransactionAmt`, `ProductCD`
@@ -99,12 +95,18 @@ The dataset used is the **IEEE-CIS Fraud Detection** benchmark (provided by Vest
     * **Amount Tiers**: `amount_bucket` (grouping transactions into spending tiers for risk segmentation).
 * **Storage Strategy**:
   * **Raw Layer**: Store complete Parquet files on Google Cloud Storage (GCS) and query via BigQuery external tables.
-  * **Staging & Marts**: Only transform and load the ~20–22 columns above to keep query costs near zero, while providing all necessary metrics for Looker Studio dashboards and Agentic AI summaries.
+  * **Staging & Marts**: Only transform and load the ~20–22 columns above to keep query costs near zero.
+
+![alt text](../images/eda12.png)
+
+![alt text](../images/eda13.png)
+
+
 
 ### 3.2. BigQuery Optimization Strategy (Partitioning & Clustering)
 * **Partitioning**: 
   * Partition by transaction date: `transaction_date` (derived from `TransactionDT`).
-  * Yields an estimated 80–90% reduction in query scan volume when filtering by date ranges on Looker Studio dashboards.
+  * Yields an estimated 80–90% reduction in query scan volume when filtering by date ranges on dashboards.
 * **Clustering**:
   * Cluster tables by high-cardinality and frequent filter keys: `product_cd`, `card_type` (`card4`), and `is_fraud`.
   * Optimizes query performance and drastically reduces execution cost for risk segmentation and card-network breakdowns.
