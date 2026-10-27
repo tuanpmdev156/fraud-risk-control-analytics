@@ -176,6 +176,30 @@ def slack_alert_on_failure(context) -> None:
     except Exception as exc:
         print(f"[ERROR] Cannot send arlet to Slack: {exc}")
 
+def trigger_evidence_deploy(**context) -> None:
+    """Trigger GitHub Actions workflow_dispatch to rebuild and deploy Evidence.dev."""
+    github_token = os.environ.get("GITHUB_TOKEN")
+    github_repo = os.environ.get("GITHUB_REPO")
+    workflow_file = os.environ.get("GITHUB_WORKFLOW_FILE")
+    branch = os.environ.get("GITHUB_BRANCH", "main")
+
+    if not github_token or not github_repo or not workflow_file:
+        raise ValueError("Missing environment variable for triggering Evidence CI/CD.")
+
+    url = f"https://api.github.com/repos/{github_repo}/actions/workflows/{workflow_file}/dispatches"
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {github_token}",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    payload = {"ref": branch}
+
+    response = requests.post(url, headers=headers, json=payload, timeout=15)
+    if response.status_code != 204:
+        raise RuntimeError(
+            f"Failed to trigger GitHub Actions workflow (HTTP {response.status_code}): {response.text}"
+        )
+    print(f"[INFO] Successfully triggered '{workflow_file}' on {github_repo} (ref={branch}).")
 
 # ---------------------------------------------------------------------------
 # DAG Definition
@@ -309,6 +333,12 @@ with DAG(
         bash_command=f"dbt test --project-dir {DBT_DIR} --profiles-dir {DBT_DIR}",
     )
 
+    # 7. Trigger CI/CD Evidence.dev Deployment
+    task_trigger_evidence_deploy = PythonOperator(
+        task_id="trigger_evidence_deploy",
+        python_callable=trigger_evidence_deploy,
+    )
+
     # -----------------------------------------------------------------------
     # Task Dependencies Graph
     # -----------------------------------------------------------------------
@@ -316,7 +346,5 @@ with DAG(
 
     task_convert_transaction >> task_upload_transaction_gcs >> task_create_bq_ext_transaction >> task_audit_transaction
     task_convert_identity >> task_upload_identity_gcs >> task_create_bq_ext_identity >> task_audit_identity
-
-    [task_audit_transaction, task_audit_identity] >> task_dbt_run >> task_dbt_test
-
+    [task_audit_transaction, task_audit_identity] >> task_dbt_run >> task_dbt_test >> task_trigger_evidence_deploy
 

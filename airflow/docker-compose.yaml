@@ -61,6 +61,10 @@ services:
       PYTHONPATH: /opt/airflow
       DBT_PROFILES_DIR: /opt/airflow/dbt
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_REPO: ${GITHUB_REPO:-tuanpmdev156/fraud-risk-control-analytics}
+      GITHUB_WORKFLOW_FILE: ${GITHUB_WORKFLOW_FILE:-deploy-evidence.yml}
+      GITHUB_BRANCH: ${GITHUB_BRANCH:-main}
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -103,6 +107,10 @@ services:
       PYTHONPATH: /opt/airflow
       DBT_PROFILES_DIR: /opt/airflow/dbt
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_REPO: ${GITHUB_REPO:-tuanpmdev156/fraud-risk-control-analytics}
+      GITHUB_WORKFLOW_FILE: ${GITHUB_WORKFLOW_FILE:-deploy-evidence.yml}
+      GITHUB_BRANCH: ${GITHUB_BRANCH:-main}
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
