@@ -7,51 +7,75 @@
 ![Evidence](https://img.shields.io/badge/Dashboard-Evidence.dev-4F46E5?logo=data:image/svg+xml;base64,&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)
 
-📊 **Live BI Dashboard (GitHub Pages)**: [https://tuanpmdev156.github.io/fraud-risk-control-analytics/](https://tuanpmdev156.github.io/fraud-risk-control-analytics/)
+## Table of Contents
+
+- [1. Project Overview](#1-project-overview)
+- [2. Dataset & Exploratory Data Analysis (EDA)](#2-dataset--exploratory-data-analysis-eda)
+- [3. System Architecture](#3-system-architecture)
+- [4. Tech Stack](#4-tech-stack)
+- [5. Quick Start & Reproduction Guide](#5-quick-start--reproduction-guide)
+  - [Prerequisites](#prerequisites)
+  - [5.1. Clone & Install Dependencies](#51-clone--install-dependencies)
+  - [5.2. GCP Authentication](#52-gcp-authentication)
+  - [5.3. Provision Infrastructure (Terraform)](#53-provision-infrastructure-terraform)
+  - [5.4. Verify Infrastructure](#54-verify-infrastructure)
+  - [5.5. Download Dataset (IEEE-CIS Fraud Detection)](#55-download-dataset-ieee-cis-fraud-detection)
+  - [5.6. Data Exploration & Validation](#56-data-exploration--validation)
+  - [5.7. Standalone Ingestion to GCS Data Lake](#57-standalone-ingestion-to-gcs-data-lake)
+  - [5.8. Orchestrate End-to-End Pipeline with Apache Airflow](#58-orchestrate-end-to-end-pipeline-with-apache-airflow)
+  - [5.9. Data Warehouse Transformations & Data Quality (dbt)](#59-data-warehouse-transformations--data-quality-dbt)
+  - [5.10. BI-as-Code Dashboard (Evidence.dev) & CI/CD Deployment](#510-bi-as-code-dashboard-evidencedev--cicd-deployment)
 
 ---
 
-## 1. Problem Statement
+## 1. Project Overview
 
-This project builds a production-grade **end-to-end Data Engineering system** for financial fraud detection and risk analytics, featuring:
+Card fraud costs the global economy over **$32 billion per year**. Because traditional rule-based systems miss sophisticated fraud patterns, payment processors need scalable, data-driven analytical infrastructure to detect anomalies and monitor risk exposure.
 
-- **Automated End-to-End Pipeline**: 
-Orchestration via *Apache Airflow* covering raw CSV validation, Parquet compression, GCS & BigQuery External Table provisioning, *dbt* transformations/testing, and *GitHub Actions* BI deployment with *Slack* incident alerting
+This project builds a production-grade **end-to-end Data Engineering pipeline** that ingests, models, and visualises **590,540 real-world e-commerce transactions** from Vesta Corporation ([IEEE-CIS dataset](https://www.kaggle.com/competitions/ieee-fraud-detection)) to answer:
+- **What is the fraud rate across product categories, card networks, and device types?**
+- **How does fraud volume and monetary exposure ($M) evolve over time?**
+- **Which transaction segments and amount tiers (`micro` to `critical`) carry the highest risk?**
 
-- **Optimized Medallion Data Warehouse**: 
-Multi-layer architecture (`raw`, `staging`, `production`) on BigQuery with partitioning, clustering, deduplication, and quarantine routing
-
-- **Resilience & Data Governance**: 
-Engineered to handle job interruptions, schema drift, duplicate primary keys, and anomalous records via PyArrow & dbt tests
-
-- **BI-as-Code Dashboard & CI/CD**: 
-Interactive risk analytics built with Evidence.dev (Markdown + SQL) and automatically deployed to GitHub Pages via GitHub Actions (`push` & Airflow `workflow_dispatch`)
+**Key Engineering Highlights**:
+- **Automated Orchestration**: *Apache Airflow* DAG handling CSV validation, Snappy Parquet compression, GCS & BigQuery External Table provisioning, *dbt* runs, and *Slack* failure alerts.
+- **Optimized Medallion Warehouse**: BigQuery `raw` ➔ `staging` ➔ `production` layers with partitioning, clustering, deduplication, and anomalous record quarantine routing.
+- **Data Quality & Governance**: Fail-fast schema drift checks via *PyArrow* and 15 automated *dbt* schema & singular tests.
+- **BI-as-Code & CI/CD**: Interactive *Evidence.dev* dashboard auto-deployed to GitHub Pages via *GitHub Actions* (`push` & Airflow `workflow_dispatch`).
 
 ---
 
 ## 2. Dataset & Exploratory Data Analysis (EDA)
 
-The project utilizes the benchmark **IEEE-CIS Fraud Detection** dataset ([Kaggle](https://www.kaggle.com/c/ieee-fraud-detection)):
-- **Data Volume**: 590,540 transactions and 144,233 identity records.
+| Attribute | Detail |
+|---|---|
+| **Source** | Vesta Corporation (real production data, anonymised) |
+| **Size** | 590,540 transactions + 144,233 identity records (~710 MB raw CSVs) |
+| **Fraud rate** | 3.50% (20,663 flagged transactions — severe class imbalance) |
+| **Features** | 400+ (transaction amount, card type, email domains, device info, match flags) |
+| **Time span** | ~6 months of e-commerce activity |
+| **Kaggle page** | [ieee-fraud-detection](https://www.kaggle.com/competitions/ieee-fraud-detection) |
 
-- **Conversion Efficiency**: Compressed raw CSVs (710 MB) into Parquet (83.6 MB, **~88% space saving**) using Snappy.
-
-- **Key EDA Findings**: Severe class imbalance, heavy amount right-skewness.
-
-- **Data warehouse Architecture**: Pruned 400+ raw columns down to **18–23 core attributes** (~95.8% memory reduction), partitioned by `transaction_date` and clustered by `product_code`, `card_network`, `is_fraud`.
+**Key EDA & Architectural Decisions**:
+- **Conversion Efficiency**: Compressed raw CSVs (710 MB) into Snappy Parquet (83.6 MB, **~88% storage saving**).
+- **Distribution Insights**: Identified severe class imbalance (`3.50%` fraud) and heavy transaction amount right-skewness requiring log-scale profiling and risk-tier bucketing (`micro` to `critical`).
+- **Warehouse Optimization**: Pruned 400+ sparse raw columns down to **18–23 core attributes** (**~95.8% memory reduction**), partitioned by `transaction_date`, and clustered by `product_code`, `card_network`, `is_fraud`.
 
 > Detailed EDA & Architectural Decision: [`docs/data_exploration.md`](docs/data_exploration.md)  
-Standardized Profiling Notebook: [`notebooks/data_exploration.ipynb`](notebooks/data_exploration.ipynb)
+> Standardized Profiling Notebook: [`notebooks/data_exploration.ipynb`](notebooks/data_exploration.ipynb)
 
 ---
 
 ## 3. System Architecture
 
+![System Architecture](docs/images/system_architecture.png)  
+*Figure: System Architecture.*
+
 ---
 
-## 🛠️ Tech Stack
+## 4. Tech Stack
 
-| Component | Technology | Rationale |
+| Component | Technology | Detail |
 |---|---|---|
 | **Cloud** | Google Cloud Platform | BigQuery serverless DW + native GCS Data Lake integration |
 | **IaC** | Terraform | Declarative infra: GCS, BigQuery datasets (`raw`, `staging`, `production`), IAM |
@@ -64,7 +88,7 @@ Standardized Profiling Notebook: [`notebooks/data_exploration.ipynb`](notebooks/
 
 ---
 
-## 🔧 Quick Start & Reproduction Guide
+## 5. Quick Start & Reproduction Guide
 
 ### Prerequisites
 
@@ -74,7 +98,7 @@ Standardized Profiling Notebook: [`notebooks/data_exploration.ipynb`](notebooks/
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
 - [Node.js](https://nodejs.org/) (>= 18.0, for Evidence.dev dashboard)
 
-### 1. Clone & Install Dependencies
+### 5.1. Clone & Install Dependencies
 
 ```bash
 git clone https://github.com/tuanpmdev156/fraud-risk-control-analytics.git
@@ -82,14 +106,14 @@ cd fraud-risk-control-analytics
 uv sync
 ```
 
-### 2. GCP Authentication
+### 5.2. GCP Authentication
 
 ```bash
 gcloud auth login
 gcloud auth application-default login
 ```
 
-### 3. Provision Infrastructure (Terraform)
+### 5.3. Provision Infrastructure (Terraform)
 
 ```bash
 cd terraform
@@ -101,7 +125,9 @@ terraform apply
 cd ..
 ```
 
-### 4. Verify Infrastructure
+> **Note**: `terraform apply` provisions the GCS Data Lake bucket, BigQuery datasets (`raw`, `staging`, `production`), IAM roles, and automatically exports the Service Account JSON key to `credentials/pipeline-sa-key.json` for local Airflow, Python, and dbt authentication.
+
+### 5.4. Verify Infrastructure
 
 ```bash
 terraform -chdir=terraform output
@@ -109,7 +135,24 @@ gcloud storage ls
 bq ls --project_id=YOUR_PROJECT_ID
 ```
 
-### 5. Data Exploration & Validation
+### 5.5. Download Dataset (IEEE-CIS Fraud Detection)
+
+Download `train_transaction.csv` and `train_identity.csv` from the [IEEE-CIS Fraud Detection Kaggle competition](https://www.kaggle.com/c/ieee-fraud-detection/data) and place them in `data/raw/ieee-fraud-detection/`:
+
+```bash
+mkdir -p data/raw/ieee-fraud-detection
+
+# Option 1: Using Kaggle CLI (requires ~/.kaggle/kaggle.json)
+uv run kaggle competitions download -c ieee-fraud-detection -f train_transaction.csv -p data/raw/ieee-fraud-detection
+uv run kaggle competitions download -c ieee-fraud-detection -f train_identity.csv -p data/raw/ieee-fraud-detection
+unzip "data/raw/ieee-fraud-detection/*.zip" -d data/raw/ieee-fraud-detection/
+
+# Option 2: Manually download from Kaggle UI and extract into:
+# data/raw/ieee-fraud-detection/train_transaction.csv
+# data/raw/ieee-fraud-detection/train_identity.csv
+```
+
+### 5.6. Data Exploration & Validation
 
 Inspect distributions, label imbalance, and schema integrity:
 - **Notebook**: [`notebooks/data_exploration.ipynb`](notebooks/data_exploration.ipynb) (numerical profiling & memory benchmarks)
@@ -118,7 +161,7 @@ Inspect distributions, label imbalance, and schema integrity:
 uv run jupyter lab notebooks/data_exploration.ipynb
 ```
 
-### 6. Standalone Ingestion to GCS Data Lake
+### 5.7. Standalone Ingestion to GCS Data Lake
 
 Run [`scripts/ingest_to_gcs.py`](scripts/ingest_to_gcs.py) to convert raw CSVs to Snappy Parquet (**~88% compression**) and upload to GCS:
 
@@ -140,7 +183,7 @@ gcloud storage ls gs://YOUR_BUCKET_NAME/raw/ieee_cis/
 
 ---
 
-### 7. Orchestrate End-to-End Pipeline with Apache Airflow
+### 5.8. Orchestrate End-to-End Pipeline with Apache Airflow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -234,19 +277,24 @@ The batch pipeline is engineered for production resilience:
 
 #### Quick Commands
 ```bash
-# Start Airflow cluster (Postgres, Webserver, Scheduler)
+# 1. Configure Airflow environment variables
+cp airflow/.env.example airflow/.env
+# Edit airflow/.env to set GCP_PROJECT_ID, GCS_BUCKET_NAME,
+# and optional SLACK_WEBHOOK_URL, GITHUB_TOKEN, GITHUB_REPO, GITHUB_WORKFLOW_FILE
+
+# 2. Start Airflow cluster (Postgres, Webserver, Scheduler)
 docker compose -f airflow/docker-compose.yaml up -d --build
 
-# View Airflow Web UI
+# 3. View Airflow Web UI
 # URL: http://localhost:8080 (Username: admin | Password: admin)
 
-# Unpause and trigger the DAG via CLI or Web UI
+# 4. Unpause and trigger the DAG via CLI or Web UI
 docker compose -f airflow/docker-compose.yaml exec airflow-scheduler airflow dags unpause risk_batch_ingest
 docker compose -f airflow/docker-compose.yaml exec airflow-scheduler airflow dags trigger risk_batch_ingest
 ```
 ---
 
-### 8. Data Warehouse Transformations & Data Quality (dbt)
+### 5.9. Data Warehouse Transformations & Data Quality (dbt)
 
 The [`dbt_fraud_risk_control/`](dbt_fraud_risk_control) project implements a Medallion ELT architecture on BigQuery with built-in deduplication, quarantine routing, and automated testing.
 
@@ -265,31 +313,55 @@ The [`dbt_fraud_risk_control/`](dbt_fraud_risk_control) project implements a Med
   - [`assert_positive_amounts.sql`](dbt_fraud_risk_control/tests/assert_positive_amounts.sql): Asserts zero records have `transaction_amount <= 0` in `fct_transaction`.
   - [`assert_valid_fraud_rate.sql`](dbt_fraud_risk_control/tests/assert_valid_fraud_rate.sql): Asserts aggregated `fraud_rate` values in `fraud_risk_summary` strictly remain within `[0, 100]%`.
 
-#### Quick Commands
+#### Profile Setup & Quick Commands
+
+Create `dbt_fraud_risk_control/profiles.yml` (git-ignored for security):
+```yaml
+dbt_fraud_risk_control:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID', 'YOUR_PROJECT_ID') }}"
+      dataset: dev
+      threads: 4
+      keyfile: "{{ env_var('DBT_GOOGLE_KEYFILE', '../credentials/pipeline-sa-key.json') }}"
+      location: "{{ env_var('DBT_LOCATION', 'us-central1') }}"
+      priority: interactive
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+```
+
+Run transformations and tests locally:
 ```bash
 cd dbt_fraud_risk_control
 
 # Verify BigQuery connection
-uv run dbt debug
+uv run dbt debug --profiles-dir .
 
 # Run all staging and production models
-uv run dbt run
+uv run dbt run --profiles-dir .
 
 # Execute schema and singular data quality tests
-uv run dbt test
+uv run dbt test --profiles-dir .
 
 # Generate and serve interactive dbt lineage documentation
-uv run dbt docs generate
-uv run dbt docs serve
+uv run dbt docs generate --profiles-dir .
+uv run dbt docs serve --profiles-dir .
 ```
 
 ---
 
-### 9. BI-as-Code Dashboard (Evidence.dev) & CI/CD Deployment
+### 5.10. BI-as-Code Dashboard (Evidence.dev) & CI/CD Deployment
+
+
+![Evidence.dev Risk Analytics Dashboard](docs/images/evidence_dashboard.png)  
+*🌐 **Live Dashboard**: [https://tuanpmdev156.github.io/fraud-risk-control-analytics/](https://tuanpmdev156.github.io/fraud-risk-control-analytics/)*
 
 Interactive risk dashboard built with **Evidence.dev** ([`evidence/pages/index.md`](evidence/pages/index.md)), querying BigQuery production marts via version-controlled SQL in [`evidence/sources/bigquery/`](evidence/sources/bigquery).
 
-🌐 **Live Dashboard**: [https://tuanpmdev156.github.io/fraud-risk-control-analytics/](https://tuanpmdev156.github.io/fraud-risk-control-analytics/)
+
 
 #### Key Analytics Views
 - **Executive KPIs**: Tracks total transactions (**590,540**), overall fraud rate (**3.50%**), fraud exposure ($M), and highest-risk product (`C`).
