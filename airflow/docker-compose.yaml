@@ -59,6 +59,7 @@ services:
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-fraud-risk-analytics-131026}
       GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-fraud-risk-131026-data-lake}
       PYTHONPATH: /opt/airflow
+      DBT_PROFILES_DIR: /opt/airflow/dbt
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     volumes:
       - ./dags:/opt/airflow/dags
@@ -67,6 +68,7 @@ services:
       - ../data:/opt/airflow/data
       - ../credentials:/opt/airflow/credentials:ro
       - ../scripts:/opt/airflow/scripts:ro
+      - ../dbt_fraud_risk_control:/opt/airflow/dbt
     ports:
       - "8080:8080"
     healthcheck:
@@ -99,6 +101,7 @@ services:
       GCP_PROJECT_ID: ${GCP_PROJECT_ID:-fraud-risk-analytics-131026}
       GCS_BUCKET_NAME: ${GCS_BUCKET_NAME:-fraud-risk-131026-data-lake}
       PYTHONPATH: /opt/airflow
+      DBT_PROFILES_DIR: /opt/airflow/dbt
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
     volumes:
       - ./dags:/opt/airflow/dags
@@ -107,6 +110,7 @@ services:
       - ../data:/opt/airflow/data
       - ../credentials:/opt/airflow/credentials:ro
       - ../scripts:/opt/airflow/scripts:ro
+      - ../dbt_fraud_risk_control:/opt/airflow/dbt
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
       interval: 30s
