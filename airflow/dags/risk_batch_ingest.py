@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from airflow import DAG
+from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryCheckOperator,
@@ -39,6 +40,7 @@ AIRFLOW_HOME = Path(os.environ.get("AIRFLOW_HOME", "/opt/airflow"))
 DATA_DIR = AIRFLOW_HOME / "data"
 RAW_DIR = DATA_DIR / "raw" / "ieee-fraud-detection"
 PARQUET_DIR = DATA_DIR / "parquet"
+DBT_DIR = AIRFLOW_HOME / "dbt"
 
 TRANSACTION_FILE = "train_transaction"
 IDENTITY_FILE = "train_identity"
@@ -296,6 +298,17 @@ with DAG(
         use_legacy_sql=False,
     )
 
+    # 6. dbt Transformations & Data Tests
+    task_dbt_run = BashOperator(
+        task_id="dbt_run",
+        bash_command=f"dbt run --project-dir {DBT_DIR} --profiles-dir {DBT_DIR}",
+    )
+
+    task_dbt_test = BashOperator(
+        task_id="dbt_test",
+        bash_command=f"dbt test --project-dir {DBT_DIR} --profiles-dir {DBT_DIR}",
+    )
+
     # -----------------------------------------------------------------------
     # Task Dependencies Graph
     # -----------------------------------------------------------------------
@@ -303,4 +316,7 @@ with DAG(
 
     task_convert_transaction >> task_upload_transaction_gcs >> task_create_bq_ext_transaction >> task_audit_transaction
     task_convert_identity >> task_upload_identity_gcs >> task_create_bq_ext_identity >> task_audit_identity
+
+    [task_audit_transaction, task_audit_identity] >> task_dbt_run >> task_dbt_test
+
 
